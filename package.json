@@ -4,7 +4,7 @@
   "description": "message queue system",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/mocha test/test.* -w"
   },
   "repository": {
     "type": "git",
@@ -13,6 +13,9 @@
   "author": "",
   "license": "Ideolys",
   "dependencies": {
-    "kitten-socket": "1.2.5"
+    "kitten-jwt": "^0.3.1",
+    "kitten-socket": "^1.2.5",
+    "mocha": "^6.0.2",
+    "should": "^13.2.3"
   }
 }
