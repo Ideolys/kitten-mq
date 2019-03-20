@@ -154,6 +154,49 @@ describe('kitten-mq', () => {
           });
         }, 100);
       });
+
+      it('should allow multiple connections for a clientId', done => {
+        const _clientConfig = {
+          clientId      : 'client-1',
+          keysDirectory : path.join(__dirname, 'keys'),
+          keysName      : 'client',
+          hosts         : [
+            'localhost:' + configBroker1.socketServer.port
+          ]
+        };
+
+        let _broker1 = broker(configBroker1);
+
+        let _client1 = client();
+        let _client2 = client();
+
+        setTimeout(() => {
+          _client1.connect(_clientConfig, () => {
+            _client2.connect(_clientConfig, () => {
+
+              setTimeout(() => {
+                should(_broker1.clients).have.key('client-1')
+                should(_broker1.clients['client-1']).be.an.Array().and.have.lengthOf(2);
+
+                _client1.disconnect(() => {
+
+                  setTimeout(() =>  {
+                    should(_broker1.clients['client-1']).be.an.Array().and.have.lengthOf(1);
+
+                    _client2.disconnect(() => {
+
+                      setTimeout(() => {
+                        should(_broker1.clients['client-1']).be.an.Array().and.have.lengthOf(0);
+                        _broker1.stop(done);
+                      }, 20);
+                    });
+                  }, 20)
+                });
+              }, 50);
+            });
+          });
+        }, 50);
+      });
     });
 
   });
