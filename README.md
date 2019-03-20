@@ -79,7 +79,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
     console.log(info.version);
     console.log(info.id);
     console.log(msg);
-    done();
+    done(false); // requeue if false is passed
   });
 
   // you can also pass an object to describe the channel
@@ -107,7 +107,7 @@ The broker has a config file which defines client rights between channels
     {
       client        : 'easilys-*',
       autoAccept    : true,                                 // auto accept new clients which match this client name
-      readExclusive : ['gateway/*', 'supplier_invoice/*'],  // the client cannot listen on *
+      read          : ['gateway/*', 'supplier_invoice/*'],  // the client cannot listen on *
       write         : ['email', 'faxes']
     },
     {
@@ -122,12 +122,26 @@ The broker has a config file which defines client rights between channels
       write         : ['*']
     }
   ],
+  // requeueLimit    : 5,
+  // requeueInterval : 50ms
   exclusiveGroups : {
     restalliance : ['easilys-20230303', 'easilys-302020']
   }
 }
-```
 
+// Description des channels : 
+
+{
+  'easilys/v1' :{
+    map : {
+
+    },
+    requeueAutoWhenNoAcknoledgeAfter : 120s
+    requeueLimit    : 2                     // global, aussi bien pour les done() que les requeue auto
+    requeueInterval : 100 sec               
+  }
+}
+```
 
 ## Concepts to learn
 
@@ -159,6 +173,11 @@ consumer will receive the message among other
 
 
 ## Notes 
+
+Chaque client envoi sur les 2 broker
+Srul l'iun des broker renvoi les message (le master), l'esclave attend les accusé de récdprion pour vider
+Les accusé de réception sont 
+
 
 
 
