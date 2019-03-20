@@ -43,3 +43,8 @@ package-lock.json
 
 
 ######## project-specific
+
+packets/*.log
+test/keys/*.pub
+test/keys/*.pem
+test/clients/*.pub
