@@ -930,6 +930,50 @@ describe('kitten-mq', () => {
           });
         }, 50);
       });
+
+      it('should listen to a queue after packet is sent', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                should(err).not.ok();
+              });
+
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              });
+            });
+          });
+        }, 50);
+      });
     });
   });
 
