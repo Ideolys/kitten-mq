@@ -19,7 +19,8 @@ const configBroker1 = {
     port            : 1235,
     logs            : 'packets',
     packetsFilename : 'management1.log'
-  }
+  },
+  isMaster : true
 };
 
 const configBroker2 = {
@@ -262,6 +263,586 @@ describe('kitten-mq', () => {
         }, 100);
       });
 
+    });
+
+    describe.only('listen()', () => {
+
+      it('should listen to a queue', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              });
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  console.log(err);
+                });
+              }, 20);
+            });
+          });
+        }, 50);
+      });
+
+      it('should listen for multiple clients', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _isListenClient1HasBeenCalled = false;
+        let _isListenClient2HasBeenCalled = false;
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                _isListenClient1HasBeenCalled = true;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _client2.listen('endpoint/1.0/test', (err, packet) => {
+                _isListenClient2HasBeenCalled = true;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              setTimeout(() => {
+                should(_isListenClient1HasBeenCalled).eql(true);
+                should(_isListenClient2HasBeenCalled).eql(true);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 100);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  console.log(err);
+                });
+              }, 20);
+            });
+          });
+        }, 50);
+      });
+
+      it('should not listen for multiple listeners if it is the same client', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _isListener1HasBeenCalled = false;
+        let _isListener2HasBeenCalled = false;
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                _isListener1HasBeenCalled = true;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                _isListener2HasBeenCalled = true;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              setTimeout(() => {
+                should(_isListener1HasBeenCalled).eql(!_isListener2HasBeenCalled);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 50);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  console.log(err);
+                });
+              }, 20);
+            });
+          });
+        }, 50);
+      });
+
+      it('should route packets to listeners in round-robin way if the same client has been used', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _handlerCalls = [];
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                _handlerCalls.push('handler1');
+              });
+
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                _handlerCalls.push('handler2');
+              });
+
+              setTimeout(() => {
+                should(_handlerCalls).eql(['handler1', 'handler2', 'handler1', 'handler2']);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 100);
+
+              for (var i = 0; i < 4; i++) {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' });
+              }
+            });
+          });
+        }, 50);
+      });
+
+      it('should route packets to listeners in round-robin way if the same client has been used & for other client', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _handlerCalls          = [];
+        let _nbCallsHandlerClient2 = 0;
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                _handlerCalls.push('handler1');
+              });
+
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                _handlerCalls.push('handler2');
+              });
+
+              _client2.listen('endpoint/1.0/test', (err, packet) => {
+                _nbCallsHandlerClient2++;
+              });
+
+              setTimeout(() => {
+                should(_handlerCalls).eql(['handler1', 'handler2', 'handler1', 'handler2']);
+                should(_nbCallsHandlerClient2).eql(4);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 100);
+
+              for (var i = 0; i < 4; i++) {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' });
+              }
+            });
+          });
+        }, 50);
+      });
+
+      it('should listen for multiple params /endpoint/version/*', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _nbCalls = 0;
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/1.0/*', (err, packet, info) => {
+                should(err).not.ok();
+                _nbCalls++;
+
+                if (_nbCalls === 1) {
+                  should(info.channel).eql('endpoint/1.0/1');
+                }
+                else if (_nbCalls === 2) {
+                  should(info.channel).eql('endpoint/1.0/2');
+                }
+                else {
+                  should(info.channel).eql('endpoint/1.0/3');
+                }
+
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              setTimeout(() => {
+                should(_nbCalls).eql(3);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 100);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        }, 50);
+      });
+
+      it('should listen for multiple params /endpoint/version/* & listen for /endpoint/version/1', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _nbCalls        = 0;
+        let _nbCallsClient2 = 0;
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/1.0/*', (err, packet, info) => {
+                should(err).not.ok();
+                _nbCalls++;
+
+                if (_nbCalls === 1) {
+                  should(info.channel).eql('endpoint/1.0/1');
+                }
+                else if (_nbCalls === 2) {
+                  should(info.channel).eql('endpoint/1.0/2');
+                }
+                else {
+                  should(info.channel).eql('endpoint/1.0/3');
+                }
+
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _client2.listen('endpoint/1.0/1', (err, packet, info) => {
+                should(err).not.ok();
+                _nbCallsClient2++;
+                should(info.channel).eql('endpoint/1.0/1');
+
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              setTimeout(() => {
+                should(_nbCalls).eql(3);
+                should(_nbCallsClient2).eql(1);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 100);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        }, 50);
+      });
+
+      it('should listen for multiple params /endpoint/*', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _nbCalls = 0;
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/*', (err, packet, info) => {
+                should(err).not.ok();
+                _nbCalls++;
+
+                if (_nbCalls === 1) {
+                  should(info.channel).eql('endpoint/1.0/1');
+                }
+                else if (_nbCalls === 2) {
+                  should(info.channel).eql('endpoint/1.0/2');
+                }
+                else {
+                  should(info.channel).eql('endpoint/1.1/3');
+                }
+
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              setTimeout(() => {
+                should(_nbCalls).eql(3);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 100);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.1/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        }, 50);
+      });
+
+      it('should listen for multiple params /endpoint/* & listen for /endpoint/1.0/* &  & listen for /endpoint/1.1/3', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _nbCallsListener1 = 0;
+        let _nbCallsListener2 = 0;
+        let _nbCallsListener3 = 0;
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/*', (err, packet, info) => {
+                should(err).not.ok();
+                _nbCallsListener1++;
+
+                if (_nbCallsListener1 === 1) {
+                  should(info.channel).eql('endpoint/1.0/1');
+                }
+                else if (_nbCallsListener1 === 2) {
+                  should(info.channel).eql('endpoint/1.0/2');
+                }
+                else {
+                  should(info.channel).eql('endpoint/1.1/3');
+                }
+
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _client1.listen('endpoint/1.0/*', (err, packet, info) => {
+                should(err).not.ok();
+                _nbCallsListener2++;
+
+                if (_nbCallsListener2 === 1) {
+                  should(info.channel).eql('endpoint/1.0/1');
+                }
+                else if (_nbCallsListener2 === 2) {
+                  should(info.channel).eql('endpoint/1.0/2');
+                }
+
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _client2.listen('endpoint/1.1/3', (err, packet, info) => {
+                should(err).not.ok();
+                _nbCallsListener3++;
+                should(info.channel).eql('endpoint/1.1/3');
+
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              setTimeout(() => {
+                should(_nbCallsListener1).eql(3);
+                should(_nbCallsListener2).eql(2);
+                should(_nbCallsListener3).eql(1);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 100);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.1/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        }, 50);
+      });
     });
   });
 

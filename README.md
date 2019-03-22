@@ -7,8 +7,8 @@ Easy to learn, Secure, Business-ready, Resilient & Fast Message Queue system
 Most of systems (Kafka, RabbitMQ, ZeroMQ, NSQ, NATS, ...) are either too complex to use/deploy or too "low-level".
 First mission: stay simple to learn, simple to use and simple to deploy.
 
-I want a system which provides a beautiful admin dashboard, where each client is authenticated 
-automatically with an assymetric JWTs (no user/password to maintain for each client!) and where it 
+I want a system which provides a beautiful admin dashboard, where each client is authenticated
+automatically with an assymetric JWTs (no user/password to maintain for each client!) and where it
 is easy to define who has the right to listen/send what.
 
 It must provide a documentation for each channel and follow this principle `one channel endpoint/version = one JSON format` (no surprise!)
@@ -44,7 +44,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
     privKey  : fs.readfile('kittenMQ.pem'),  // The private key of the client used to generate tokens
     clientId : 'easilys-APP-KEY'             // The client id, it must be globally unique
   };
-  
+
   // When the client connects for the first time, it pushes the public key on the broker
   // Then, the broker will accept connections for this client only if tokens are generated with the same pub/priv key
   let mq = kittenMQ.connect(config, (err) => {
@@ -93,7 +93,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
   });
   listener.addId([], (err) => {}); // you can add id to listen at runtime
   listener.delId([], (err) => {}); // or remove id to listen at runtime
-  
+
 ```
 
 ## Right Management
@@ -103,7 +103,7 @@ The broker has a config file which defines client rights between channels
 ```javascript
 {
   port : 8443,
-  rules : [ 
+  rules : [
     {
       client        : 'easilys-*',
       autoAccept    : true,                                 // auto accept new clients which match this client name
@@ -129,16 +129,16 @@ The broker has a config file which defines client rights between channels
   }
 }
 
-// Description des channels : 
+// Description des channels :
 
 {
   'easilys/v1' :{
     map : {
 
     },
-    requeueAutoWhenNoAcknoledgeAfter : 120s
+    requeueAutoWhenNoAcknowledgeAfter : 120s
     requeueLimit    : 2                     // global, aussi bien pour les done() que les requeue auto
-    requeueInterval : 100 sec               
+    requeueInterval : 100 sec
   }
 }
 ```
@@ -172,11 +172,11 @@ consumer will receive the message among other
 
 
 
-## Notes 
+## Notes
 
 Chaque client envoi sur les 2 broker
 Srul l'iun des broker renvoi les message (le master), l'esclave attend les accusé de récdprion pour vider
-Les accusé de réception sont 
+Les accusé de réception sont
 
 
 
