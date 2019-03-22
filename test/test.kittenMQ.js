@@ -357,6 +357,49 @@ describe('kitten-mq', () => {
         }, 50);
       });
 
+      it('should not send to /* ', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('endpoint/1.0/1', (err) => {
+                should(err).eql(constants.ERRORS.BAD_ENPOINT);
+              });
+
+              setTimeout(() => {
+                _client2.send('*', { test : 'hello world' }, (err) => {
+                  should(err).eql(constants.ERRORS.BAD_ENPOINT);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                });
+              }, 20);
+            });
+          });
+        }, 50);
+      });
+
       it('should listen for multiple clients', done => {
         let _client1 = client();
         let _client2 = client();
