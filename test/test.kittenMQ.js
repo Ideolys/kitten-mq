@@ -1,9 +1,10 @@
-const path   = require('path');
-const fs     = require('fs');
-const should = require('should');
-const broker = require('../index').broker;
-const client = require('../index').client;
-const Socket = require('kitten-socket');
+const path      = require('path');
+const fs        = require('fs');
+const should    = require('should');
+const broker    = require('../index').broker;
+const client    = require('../index').client;
+const Socket    = require('kitten-socket');
+const constants = require('../lib/broker/constants');
 
 const configBroker1 = {
   serviceId             : 'broker-1',
@@ -295,6 +296,49 @@ describe('kitten-mq', () => {
                 should(packet).eql({
                   test : 'hello world'
                 });
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              });
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  console.log(err);
+                });
+              }, 20);
+            });
+          });
+        }, 50);
+      });
+
+      it('should not listen to /* ', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        setTimeout(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port
+              ]
+            }, () => {
+              _client1.listen('*', (err) => {
+                should(err).eql(constants.ERRORS.BAD_ENPOINT);
 
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
