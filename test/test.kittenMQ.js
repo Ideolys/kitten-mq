@@ -59,73 +59,98 @@ describe('kitten-mq', () => {
     done();
   });
 
+  beforeEach(() => {
+    function deleteKeys (directory) {
+      if (!fs.existsSync(directory)) {
+        return;
+      }
+
+      let _files = fs.readdirSync(directory);
+
+      for (var i = 0; i < _files.length; i++) {
+        fs.unlinkSync(path.join(directory, _files[i]));
+      }
+    }
+
+    deleteKeys(path.join(__dirname, 'clients'));
+    deleteKeys(path.join(__dirname, 'keys'));
+  });
+
   describe('broker', () => {
 
     describe('instanciation', () => {
 
       it('should instanciate brocker socket server', done => {
-        let _broker             = broker(configBroker1);
-        let _socketClientBroker = new Socket(configBroker1.socketServer.port);
+        let _broker = broker(configBroker1);
+        _broker.start(() => {
 
-        // start the client
-        _socketClientBroker.startClient(() => {
-          _socketClientBroker.send('1# hello, Im the client');
-        });
-        _socketClientBroker.on('message', function (messageFromServer) {
-          if (messageFromServer.data.type) {
-            return;
-          }
+          let _socketClientBroker = new Socket(configBroker1.socketServer.port);
 
-          should(messageFromServer.data).eql('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
-          _socketClientBroker.stop(() => {
-            _broker.stop(done);
+          // start the client
+          _socketClientBroker.startClient(() => {
+            _socketClientBroker.send('1# hello, Im the client');
           });
-        });
-        _broker._sockets.broker.on('message', function (messageFromClient) {
-          if (messageFromClient.data.type) {
-            return;
-          }
+          _socketClientBroker.on('message', function (messageFromServer) {
+            if (messageFromServer.data.type) {
+              return;
+            }
 
-          should(messageFromClient.data).eql('1# hello, Im the client');
-          messageFromClient.send('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
+            should(messageFromServer.data).eql('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
+            _socketClientBroker.stop(() => {
+              _broker.stop(done);
+            });
+          });
+          _broker._sockets.broker.on('message', function (messageFromClient) {
+            if (messageFromClient.data.type) {
+              return;
+            }
+
+            should(messageFromClient.data).eql('1# hello, Im the client');
+            messageFromClient.send('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
+          });
         });
       });
 
       it('should instanciate management socket server', done => {
-        let _broker                 = broker(configBroker1);
-        let _socketClientManagement = new Socket(configBroker1.managementSocket.port);
+        let _broker = broker(configBroker1);
 
-        // start the client
-        _socketClientManagement.startClient(() => {
-          _socketClientManagement.send('1# hello, Im the client');
-        });
-        _socketClientManagement.on('message', function (messageFromServer) {
-          if (messageFromServer.data.type) {
-            return;
-          }
+        _broker.start(() => {
+          let _socketClientManagement = new Socket(configBroker1.managementSocket.port);
 
-          should(messageFromServer.data).eql('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
-          _socketClientManagement.stop(() => {
-            _broker.stop(done);
+          // start the client
+          _socketClientManagement.startClient(() => {
+            _socketClientManagement.send('1# hello, Im the client');
           });
-        });
-        _broker._sockets.management.on('message', function (messageFromClient) {
-          if (messageFromClient.data.type) {
-            return;
-          }
+          _socketClientManagement.on('message', function (messageFromServer) {
+            if (messageFromServer.data.type) {
+              return;
+            }
 
-          should(messageFromClient.data).eql('1# hello, Im the client');
-          messageFromClient.send('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
+            should(messageFromServer.data).eql('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
+            _socketClientManagement.stop(() => {
+              _broker.stop(done);
+            });
+          });
+          _broker._sockets.management.on('message', function (messageFromClient) {
+            if (messageFromClient.data.type) {
+              return;
+            }
+
+            should(messageFromClient.data).eql('1# hello, Im the client');
+            messageFromClient.send('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
+          });
         });
       });
 
       it('should have created private and public keys', done => {
         let _broker1 = broker(configBroker1);
 
-        should(fs.existsSync(path.join(configBroker1.keysDirectory, configBroker1.keysName + '.pem'))).eql(true);
-        should(fs.existsSync(path.join(configBroker1.keysDirectory, configBroker1.keysName + '.pub'))).eql(true);
+        _broker1.start(() => {
+          should(fs.existsSync(path.join(configBroker1.keysDirectory, configBroker1.keysName + '.pem'))).eql(true);
+          should(fs.existsSync(path.join(configBroker1.keysDirectory, configBroker1.keysName + '.pub'))).eql(true);
 
-        _broker1.stop(done);
+          _broker1.stop(done);
+        });
       });
 
       it('should have sent public key', done => {
@@ -137,7 +162,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client.connect({
             clientId      : 'client-1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -154,7 +179,7 @@ describe('kitten-mq', () => {
               });
             }, 50);
           });
-        }, 100);
+        });
       });
 
       it('should allow multiple connections for a clientId', done => {
@@ -168,11 +193,10 @@ describe('kitten-mq', () => {
         };
 
         let _broker1 = broker(configBroker1);
-
         let _client1 = client();
         let _client2 = client();
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect(_clientConfig, () => {
             _client2.connect(_clientConfig, () => {
 
@@ -197,7 +221,7 @@ describe('kitten-mq', () => {
               }, 50);
             });
           });
-        }, 50);
+        });
       });
     });
 
@@ -212,56 +236,52 @@ describe('kitten-mq', () => {
         let _broker1 = broker(configBroker1);
         let _broker2 = broker(configBroker2);
 
-        setTimeout(() => {
-          _client.connect({
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
-            hosts         : [
-              'localhost:' + configBroker1.socketServer.port,
-              'localhost:' + configBroker2.socketServer.port
-            ]
-          }, () => {
-            _client.disconnect(() => {
-              _broker1.stop(() => {
-                _broker2.stop(done);
+        _broker1.start(() => {
+          _broker2.start(() => {
+            _client.connect({
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port,
+                'localhost:' + configBroker2.socketServer.port
+              ]
+            }, () => {
+              _client.disconnect(() => {
+                _broker1.stop(() => {
+                  _broker2.stop(done);
+                });
               });
             });
           });
-        }, 100);
+        });
       });
 
       it('should have created private and public keys', done => {
-        let _client = client();
-
-        if (fs.existsSync(path.join(__dirname, 'keys', 'client.pem'))) {
-          fs.unlinkSync(path.join(__dirname, 'keys', 'client.pem'));
-        }
-        if (fs.existsSync(path.join(__dirname, 'keys', 'client.pub'))) {
-          fs.unlinkSync(path.join(__dirname, 'keys', 'client.pub'));
-        }
-
+        let _client  = client();
         let _broker1 = broker(configBroker1);
         let _broker2 = broker(configBroker2);
 
-        setTimeout(() => {
-          _client.connect({
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
-            hosts         : [
-              'localhost:' + configBroker1.socketServer.port,
-              'localhost:' + configBroker2.socketServer.port
-            ]
-          }, () => {
-            should(fs.existsSync(path.join(__dirname, 'keys', 'client.pem'))).eql(true);
-            should(fs.existsSync(path.join(__dirname, 'keys', 'client.pub'))).eql(true);
+        _broker1.start(() => {
+          _broker2.start(() => {
+            _client.connect({
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port,
+                'localhost:' + configBroker2.socketServer.port
+              ]
+            }, () => {
+              should(fs.existsSync(path.join(__dirname, 'keys', 'client.pem'))).eql(true);
+              should(fs.existsSync(path.join(__dirname, 'keys', 'client.pub'))).eql(true);
 
-            _client.disconnect(() => {
-              _broker1.stop(() => {
-                _broker2.stop(done);
+              _client.disconnect(() => {
+                _broker1.stop(() => {
+                  _broker2.stop(done);
+                });
               });
             });
           });
-        }, 100);
+        });
       });
 
     });
@@ -274,7 +294,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -311,7 +331,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should not listen to /* ', done => {
@@ -320,11 +340,11 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client_1',
             hosts         : [
               'localhost:' + configBroker1.socketServer.port
             ]
@@ -332,7 +352,7 @@ describe('kitten-mq', () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client_2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port
               ]
@@ -354,7 +374,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should not send to /* ', done => {
@@ -363,7 +383,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -397,7 +417,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should listen for multiple clients', done => {
@@ -409,7 +429,7 @@ describe('kitten-mq', () => {
         let _isListenClient1HasBeenCalled = false;
         let _isListenClient2HasBeenCalled = false;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -460,7 +480,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should not listen for multiple listeners if it is the same client', done => {
@@ -472,11 +492,11 @@ describe('kitten-mq', () => {
         let _isListener1HasBeenCalled = false;
         let _isListener2HasBeenCalled = false;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
               'localhost:' + configBroker1.socketServer.port
             ]
@@ -484,7 +504,7 @@ describe('kitten-mq', () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port
               ]
@@ -513,7 +533,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 50);
+              }, 100);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
@@ -522,7 +542,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should route packets to listeners in round-robin way if the same client has been used', done => {
@@ -533,11 +553,11 @@ describe('kitten-mq', () => {
 
         let _handlerCalls = [];
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
               'localhost:' + configBroker1.socketServer.port
             ]
@@ -545,7 +565,7 @@ describe('kitten-mq', () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port
               ]
@@ -566,14 +586,14 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 200);
 
               for (var i = 0; i < 4; i++) {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' });
               }
             });
           });
-        }, 50);
+        });
       });
 
       it('should route packets to listeners in round-robin way if the same client has been used & for other client', done => {
@@ -585,11 +605,11 @@ describe('kitten-mq', () => {
         let _handlerCalls          = [];
         let _nbCallsHandlerClient2 = 0;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
               'localhost:' + configBroker1.socketServer.port
             ]
@@ -597,7 +617,7 @@ describe('kitten-mq', () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port
               ]
@@ -623,14 +643,14 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 200);
 
               for (var i = 0; i < 4; i++) {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' });
               }
             });
           });
-        }, 50);
+        });
       });
 
       it('should listen for multiple params /endpoint/version/*', done => {
@@ -641,11 +661,11 @@ describe('kitten-mq', () => {
 
         let _nbCalls = 0;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
               'localhost:' + configBroker1.socketServer.port
             ]
@@ -653,7 +673,7 @@ describe('kitten-mq', () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port
               ]
@@ -685,7 +705,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 200);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/1', { test : 'hello world' });
@@ -694,7 +714,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should listen for multiple params /endpoint/version/* & listen for /endpoint/version/1', done => {
@@ -706,11 +726,11 @@ describe('kitten-mq', () => {
         let _nbCalls        = 0;
         let _nbCallsClient2 = 0;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
               'localhost:' + configBroker1.socketServer.port
             ]
@@ -718,7 +738,7 @@ describe('kitten-mq', () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port
               ]
@@ -761,7 +781,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 200);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/1', { test : 'hello world' });
@@ -770,7 +790,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should listen for multiple params /endpoint/*', done => {
@@ -781,11 +801,11 @@ describe('kitten-mq', () => {
 
         let _nbCalls = 0;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
               'localhost:' + configBroker1.socketServer.port
             ]
@@ -793,7 +813,7 @@ describe('kitten-mq', () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port
               ]
@@ -825,7 +845,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 200);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/1', { test : 'hello world' });
@@ -834,7 +854,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should listen for multiple params /endpoint/* & listen for /endpoint/1.0/* &  & listen for /endpoint/1.1/3', done => {
@@ -847,11 +867,11 @@ describe('kitten-mq', () => {
         let _nbCallsListener2 = 0;
         let _nbCallsListener3 = 0;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
               'localhost:' + configBroker1.socketServer.port
             ]
@@ -859,7 +879,7 @@ describe('kitten-mq', () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port
               ]
@@ -919,7 +939,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 200);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/1', { test : 'hello world' });
@@ -928,7 +948,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should listen to a queue after packet is sent', done => {
@@ -937,11 +957,11 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
               'localhost:' + configBroker1.socketServer.port
             ]
@@ -949,7 +969,7 @@ describe('kitten-mq', () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port
               ]
@@ -972,7 +992,7 @@ describe('kitten-mq', () => {
               });
             });
           });
-        }, 50);
+        });
       });
     });
 
@@ -984,7 +1004,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1026,7 +1046,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should not consume /* ', done => {
@@ -1035,7 +1055,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1081,7 +1101,7 @@ describe('kitten-mq', () => {
         let _isListenClient1HasBeenCalled = false;
         let _isListenClient2HasBeenCalled = false;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1146,7 +1166,7 @@ describe('kitten-mq', () => {
         let _isListener1HasBeenCalled = false;
         let _isListener2HasBeenCalled = false;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1189,7 +1209,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 50);
+              }, 100);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
@@ -1198,7 +1218,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should route packets to listeners in round-robin way if the same client has been used', done => {
@@ -1209,7 +1229,7 @@ describe('kitten-mq', () => {
 
         let _handlerCalls = [];
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1251,7 +1271,7 @@ describe('kitten-mq', () => {
               }
             });
           });
-        }, 50);
+        });
       });
 
       it('should route packets to listeners in round-robin way if the same client has been used & for other client', done => {
@@ -1262,7 +1282,7 @@ describe('kitten-mq', () => {
 
         let _handlerCalls = [];
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1309,7 +1329,7 @@ describe('kitten-mq', () => {
               }
             });
           });
-        }, 50);
+        });
       });
 
       it('should consume for multiple params /endpoint/version/*', done => {
@@ -1320,7 +1340,7 @@ describe('kitten-mq', () => {
 
         let _nbCalls = 0;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1375,7 +1395,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should consume for multiple params /endpoint/version/* & consume for /endpoint/version/1', done => {
@@ -1387,7 +1407,7 @@ describe('kitten-mq', () => {
         let _nbCalls        = 0;
         let _nbCallsClient2 = 0;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1444,7 +1464,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 150);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/1', { test : 'hello world' });
@@ -1453,7 +1473,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should consume for multiple params /endpoint/*', done => {
@@ -1464,7 +1484,7 @@ describe('kitten-mq', () => {
 
         let _nbCalls = 0;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1510,7 +1530,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 150);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/1', { test : 'hello world' });
@@ -1519,7 +1539,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should consume for multiple params /endpoint/* & consume for /endpoint/1.0/* &  & consume for /endpoint/1.1/3', done => {
@@ -1532,7 +1552,7 @@ describe('kitten-mq', () => {
         let _nbCallsListener2 = 0;
         let _nbCallsListener3 = 0;
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1607,7 +1627,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 150);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/1', { test : 'hello world' });
@@ -1616,7 +1636,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should consume to a queue after packet is sent', done => {
@@ -1625,7 +1645,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1661,7 +1681,7 @@ describe('kitten-mq', () => {
               });
             });
           });
-        }, 50);
+        });
       });
     });
 
@@ -1673,7 +1693,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1727,7 +1747,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should send to /endpoint/*', done => {
@@ -1736,7 +1756,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1790,7 +1810,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should send to /endpoint/param', done => {
@@ -1799,7 +1819,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(configBroker1);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1853,7 +1873,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
     });
@@ -1870,7 +1890,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(_configBroker);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1909,7 +1929,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
       it('should resend the message : ack false', done => {
@@ -1922,7 +1942,7 @@ describe('kitten-mq', () => {
 
         let _broker1 = broker(_configBroker);
 
-        setTimeout(() => {
+        _broker1.start(() => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
@@ -1968,7 +1988,7 @@ describe('kitten-mq', () => {
               }, 20);
             });
           });
-        }, 50);
+        });
       });
 
     });
