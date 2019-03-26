@@ -168,7 +168,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
 
@@ -188,7 +188,7 @@ describe('kitten-mq', () => {
           keysDirectory : path.join(__dirname, 'keys'),
           keysName      : 'client',
           hosts         : [
-            'localhost:' + configBroker1.socketServer.port
+            'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
           ]
         };
 
@@ -242,7 +242,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port,
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
                 'localhost:' + configBroker2.socketServer.port
               ]
             }, () => {
@@ -267,7 +267,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port,
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
                 'localhost:' + configBroker2.socketServer.port
               ]
             }, () => {
@@ -300,7 +300,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -308,7 +308,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/1.0/test', (err, packet) => {
@@ -346,7 +346,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client_1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -354,7 +354,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client_2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('*', (err) => {
@@ -389,7 +389,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -397,7 +397,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/1.0/1', (err) => {
@@ -435,7 +435,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -443,7 +443,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/1.0/test', (err, packet) => {
@@ -498,7 +498,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -506,7 +506,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/1.0/test', (err, packet) => {
@@ -559,7 +559,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -567,7 +567,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/1.0/test', (err, packet) => {
@@ -611,7 +611,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -619,7 +619,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/1.0/test', (err, packet) => {
@@ -667,7 +667,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -675,7 +675,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/1.0/*', (err, packet, info) => {
@@ -732,7 +732,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -740,7 +740,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/1.0/*', (err, packet, info) => {
@@ -807,7 +807,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -815,7 +815,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/*', (err, packet, info) => {
@@ -873,7 +873,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -881,7 +881,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.listen('endpoint/*', (err, packet, info) => {
@@ -963,7 +963,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -971,7 +971,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
@@ -1010,7 +1010,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1018,7 +1018,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
@@ -1061,7 +1061,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1069,7 +1069,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('*', (err) => {
@@ -1107,7 +1107,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1115,7 +1115,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
@@ -1172,7 +1172,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1180,7 +1180,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
@@ -1235,7 +1235,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1243,7 +1243,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
@@ -1288,7 +1288,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1296,7 +1296,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
@@ -1346,7 +1346,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1354,7 +1354,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('endpoint/1.0/*', (err, packet, ack, info) => {
@@ -1413,7 +1413,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1421,7 +1421,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('endpoint/1.0/*', (err, packet, ack, info) => {
@@ -1490,7 +1490,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1498,7 +1498,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('endpoint/*', (err, packet, ack, info) => {
@@ -1558,7 +1558,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1566,7 +1566,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client1.consume('endpoint/*', (err, packet, ack, info) => {
@@ -1651,7 +1651,7 @@ describe('kitten-mq', () => {
             keysDirectory : path.join(__dirname, 'keys'),
             keysName      : 'client',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
@@ -1659,7 +1659,7 @@ describe('kitten-mq', () => {
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
@@ -1697,17 +1697,17 @@ describe('kitten-mq', () => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               let _isListener1HasBeenCalled = false;
@@ -1760,17 +1760,17 @@ describe('kitten-mq', () => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               let _isListener1HasBeenCalled = false;
@@ -1823,17 +1823,17 @@ describe('kitten-mq', () => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               let _isListener1HasBeenCalled = false;
@@ -1894,17 +1894,17 @@ describe('kitten-mq', () => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               let _nbCalls = 0;
@@ -1946,17 +1946,17 @@ describe('kitten-mq', () => {
           _client1.connect({
             clientId      : 'client_1',
             keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
+            keysName      : 'client1',
             hosts         : [
-              'localhost:' + configBroker1.socketServer.port
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
             ]
           }, () => {
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
+              keysName      : 'client2',
               hosts         : [
-                'localhost:' + configBroker1.socketServer.port
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
               let _nbCalls = 0;
