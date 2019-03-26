@@ -124,9 +124,10 @@ The broker has a config file which defines client rights between channels
   ],
   // requeueLimit    : 5,
   // requeueInterval : 50ms
-  exclusiveGroups : {
-    restalliance : ['easilys-20230303', 'easilys-302020']
-  }
+
+  // exclusiveGroups : {
+  //   restalliance : ['easilys-20230303', 'easilys-302020']
+  // }
 }
 
 // Description des channels :
