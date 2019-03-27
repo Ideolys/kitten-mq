@@ -326,7 +326,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -369,7 +369,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -475,7 +475,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -537,7 +537,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1041,7 +1041,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1084,7 +1084,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1149,7 +1149,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1213,7 +1213,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1322,7 +1322,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 200);
 
               for (var i = 0; i < 4; i++) {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' });
@@ -1738,11 +1738,11 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 60);
+              }, 100);
 
               setTimeout(() => {
                 _client2.send('endpoint/*', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1805,7 +1805,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1868,7 +1868,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1924,7 +1924,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1983,7 +1983,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                  should(err).not.ok();
                 });
               }, 20);
             });
@@ -1993,497 +1993,2355 @@ describe('kitten-mq', () => {
 
     });
 
-    describe.only('rules', () => {
+    describe('rules', () => {
 
-      it('should allow client1 and client2', done => {
-        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-        _configBroker.rules = [
-          {
-            client : 'client_1',
-            read   : ['endpoint/1.0/1']
-          }
-        ];
+      describe('read', () => {
 
-        let _client1 = client();
-        let _client2 = client();
+        it('should allow client1 and client2', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              read   : ['endpoint/1.0/1']
+            }
+          ];
 
-        let _broker1 = broker(_configBroker);
+          let _client1 = client();
+          let _client2 = client();
 
-        let _isListenClient1HasBeenCalled = false;
-        let _isListenClient2HasBeenCalled = false;
-        let _isErrorHasBeenCalled         = false;
+          let _broker1 = broker(_configBroker);
 
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client1',
-            hosts         : [
-              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-            ]
-          }, () => {
-            _client2.connect({
-              clientId      : 'client_2',
+          let _isListenClient1HasBeenCalled = false;
+          let _isListenClient2HasBeenCalled = false;
+          let _isErrorHasBeenCalled         = false;
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client2',
+              keysName      : 'client1',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
-              _client1.listen('endpoint/1.0/1', (err, packet) => {
-                _isListenClient1HasBeenCalled = true;
-                should(err).not.ok();
-                should(packet).eql({
-                  test : 'hello world'
-                });
-              });
-
-              _client1.listen('endpoint/1.0/2', (err, packet) => {
-                should(err).eql('Not allowed');
-                _isErrorHasBeenCalled = true;
-              });
-
-              _client2.listen('endpoint/1.0/1', (err, packet) => {
-                _isListenClient2HasBeenCalled = true;
-                should(err).not.ok();
-              });
-
-              setTimeout(() => {
-                should(_isListenClient1HasBeenCalled).eql(true);
-                should(_isListenClient2HasBeenCalled).eql(true);
-                should(_isErrorHasBeenCalled).eql(true);
-
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                _client1.listen('endpoint/1.0/1', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
                   });
                 });
-              }, 100);
 
-              setTimeout(() => {
-                _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                _client1.listen('endpoint/1.0/2', (err, packet) => {
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  _isErrorHasBeenCalled = true;
                 });
-              }, 20);
+
+                _client2.listen('endpoint/1.0/1', (err, packet) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                  });
+                }, 20);
+              });
             });
           });
         });
-      });
 
-      it('should allow client1 and client2 to read', done => {
-        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-        _configBroker.rules = [
-          {
-            client : 'client_*',
-            read   : ['endpoint/1.0/test']
-          }
-        ];
+        it('should allow client1 and client2 to read', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              read   : ['endpoint/1.0/test']
+            }
+          ];
 
-        let _client1 = client();
-        let _client2 = client();
+          let _client1 = client();
+          let _client2 = client();
 
-        let _broker1 = broker(_configBroker);
+          let _broker1 = broker(_configBroker);
 
-        let _isListenClient1HasBeenCalled = false;
-        let _isListenClient2HasBeenCalled = false;
+          let _isListenClient1HasBeenCalled = false;
+          let _isListenClient2HasBeenCalled = false;
 
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client1',
-            hosts         : [
-              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-            ]
-          }, () => {
-            _client2.connect({
-              clientId      : 'client_2',
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client2',
+              keysName      : 'client1',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
-              _client1.listen('endpoint/1.0/test', (err, packet) => {
-                _isListenClient1HasBeenCalled = true;
-                should(err).not.ok();
-                should(packet).eql({
-                  test : 'hello world'
-                });
-              });
-
-              _client2.listen('endpoint/1.0/test', (err, packet) => {
-                _isListenClient2HasBeenCalled = true;
-                should(err).not.ok();
-                should(packet).eql({
-                  test : 'hello world'
-                });
-              });
-
-              setTimeout(() => {
-                should(_isListenClient1HasBeenCalled).eql(true);
-                should(_isListenClient2HasBeenCalled).eql(true);
-
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                _client1.listen('endpoint/1.0/test', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
                   });
                 });
-              }, 100);
 
-              setTimeout(() => {
-                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log(err);
+                _client2.listen('endpoint/1.0/test', (err, packet) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
                 });
-              }, 20);
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                  });
+                }, 20);
+              });
             });
           });
         });
-      });
 
-      it('should allow client1 to read and client2 : /endpoint/1.0/* & listen to /endpoint/1.0/param', done => {
-        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-        _configBroker.rules = [
-          {
-            client : 'client_1',
-            read   : ['endpoint/1.0/*']
-          }
-        ];
+        it('should allow client1 to read and client2 : /endpoint/1.0/* & listen to /endpoint/1.0/param', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              read   : ['endpoint/1.0/*']
+            }
+          ];
 
-        let _client1 = client();
-        let _client2 = client();
+          let _client1 = client();
+          let _client2 = client();
 
-        let _broker1 = broker(_configBroker);
+          let _broker1 = broker(_configBroker);
 
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client1',
-            hosts         : [
-              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-            ]
-          }, () => {
-            _client2.connect({
-              clientId      : 'client_2',
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client2',
+              keysName      : 'client1',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
-              let _isListenClient1HasBeenCalled = false;
-              let _isListenClient2HasBeenCalled = false;
-              let _isErrorHasBeenCalled         = false;
-              _client1.listen('endpoint/1.0/1', (err, packet) => {
-                _isListenClient1HasBeenCalled = true;
-                should(err).not.ok();
-              });
-
-              _client1.listen('endpoint/1.1/2', (err, packet) => {
-                _isErrorHasBeenCalled = true;
-                should(err).eql('Not allowed');
-              });
-
-              _client2.listen('endpoint/1.0/1', (err, packet, info) => {
-                _isListenClient2HasBeenCalled = true;
-                should(err).not.ok();
-              });
-
-              setTimeout(() => {
-                should(_isListenClient1HasBeenCalled).eql(true);
-                should(_isListenClient2HasBeenCalled).eql(true);
-                should(_isErrorHasBeenCalled).eql(true);
-
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
-                  });
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
+                _client1.listen('endpoint/1.0/1', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
                 });
-              }, 100);
 
-              setTimeout(() => {
-                _client2.send('endpoint/1.0/1', { test : 'hello world' });
-              }, 20);
+                _client1.listen('endpoint/1.1/2', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/1.0/1', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
+              });
             });
           });
         });
-      });
 
-      it('should allow client1 to read and client2 : /endpoint/1.0/* & listen to /endpoint/1.0/*', done => {
-        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-        _configBroker.rules = [
-          {
-            client : 'client_1',
-            read   : ['endpoint/1.0/*']
-          }
-        ];
+        it('should allow client1 to read and client2 : /endpoint/1.0/* & listen to /endpoint/1.0/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              read   : ['endpoint/1.0/*']
+            }
+          ];
 
-        let _client1 = client();
-        let _client2 = client();
+          let _client1 = client();
+          let _client2 = client();
 
-        let _broker1 = broker(_configBroker);
+          let _broker1 = broker(_configBroker);
 
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client1',
-            hosts         : [
-              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-            ]
-          }, () => {
-            _client2.connect({
-              clientId      : 'client_2',
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client2',
+              keysName      : 'client1',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
-              let _isListenClient1HasBeenCalled = false;
-              let _isListenClient2HasBeenCalled = false;
-              let _isErrorHasBeenCalled         = false;
-              _client1.listen('endpoint/1.0/*', (err, packet) => {
-                _isListenClient1HasBeenCalled = true;
-                should(err).not.ok();
-              });
-
-              _client1.listen('endpoint/1.1/*', (err, packet) => {
-                _isErrorHasBeenCalled = true;
-                should(err).eql('Not allowed');
-              });
-
-              _client2.listen('endpoint/1.0/*', (err, packet, info) => {
-                _isListenClient2HasBeenCalled = true;
-                should(err).not.ok();
-              });
-
-              setTimeout(() => {
-                should(_isListenClient1HasBeenCalled).eql(true);
-                should(_isListenClient2HasBeenCalled).eql(true);
-                should(_isErrorHasBeenCalled).eql(true);
-
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
-                  });
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
                 });
-              }, 100);
 
-              setTimeout(() => {
-                _client2.send('endpoint/1.0/1', { test : 'hello world' });
-              }, 20);
+                _client1.listen('endpoint/1.1/*', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/1.0/*', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
+              });
             });
           });
         });
-      });
 
-      it('should allow client1 to read and client2 : /endpoint/* a listen to /endpoint/version/param', done => {
-        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-        _configBroker.rules = [
-          {
-            client : 'client_1',
-            read   : ['endpoint/*']
-          }
-        ];
+        it('should allow client1 to read and client2 : /endpoint/* & listen to /endpoint/version/param', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              read   : ['endpoint/*']
+            }
+          ];
 
-        let _client1 = client();
-        let _client2 = client();
+          let _client1 = client();
+          let _client2 = client();
 
-        let _broker1 = broker(_configBroker);
+          let _broker1 = broker(_configBroker);
 
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client1',
-            hosts         : [
-              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-            ]
-          }, () => {
-            _client2.connect({
-              clientId      : 'client_2',
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client2',
+              keysName      : 'client1',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
-              let _isListenClient1HasBeenCalled = false;
-              let _isListenClient2HasBeenCalled = false;
-              let _isErrorHasBeenCalled         = false;
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
 
-              _client1.listen('endpoint/1.0/1', (err, packet) => {
-                _isListenClient1HasBeenCalled = true;
-                should(err).not.ok();
-              });
-
-              _client1.listen('endpoint_2/1.0/1', (err, packet) => {
-                _isErrorHasBeenCalled = true;
-                should(err).eql('Not allowed');
-              });
-
-              _client2.listen('endpoint/1.0/1', (err, packet, info) => {
-                _isListenClient2HasBeenCalled = true;
-                should(err).not.ok();
-              });
-
-              setTimeout(() => {
-                should(_isListenClient1HasBeenCalled).eql(true);
-                should(_isListenClient2HasBeenCalled).eql(true);
-                should(_isErrorHasBeenCalled).eql(true);
-
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
-                  });
+                _client1.listen('endpoint/1.0/1', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
                 });
-              }, 100);
 
-              setTimeout(() => {
-                _client2.send('endpoint/1.0/1', { test : 'hello world' });
-              }, 20);
+                _client1.listen('endpoint_2/1.0/1', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/1.0/1', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
+              });
             });
           });
         });
-      });
 
-      it('should allow client1 to read and client2 : /endpoint/* a listen to /endpoint/version/*', done => {
-        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-        _configBroker.rules = [
-          {
-            client : 'client_1',
-            read   : ['endpoint/*']
-          }
-        ];
+        it('should allow client1 to read and client2 : /endpoint/* & listen to /endpoint/version/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              read   : ['endpoint/*']
+            }
+          ];
 
-        let _client1 = client();
-        let _client2 = client();
+          let _client1 = client();
+          let _client2 = client();
 
-        let _broker1 = broker(_configBroker);
+          let _broker1 = broker(_configBroker);
 
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client1',
-            hosts         : [
-              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-            ]
-          }, () => {
-            _client2.connect({
-              clientId      : 'client_2',
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client2',
+              keysName      : 'client1',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
-              let _isListenClient1HasBeenCalled = false;
-              let _isListenClient2HasBeenCalled = false;
-              let _isErrorHasBeenCalled         = false;
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
 
-              _client1.listen('endpoint/1.0/*', (err, packet) => {
-                _isListenClient1HasBeenCalled = true;
-                should(err).not.ok();
-              });
-
-              _client1.listen('endpoint_2/1.0/*', (err, packet) => {
-                _isErrorHasBeenCalled = true;
-                should(err).eql('Not allowed');
-              });
-
-              _client2.listen('endpoint/1.0/*', (err, packet, info) => {
-                _isListenClient2HasBeenCalled = true;
-                should(err).not.ok();
-              });
-
-              setTimeout(() => {
-                should(_isListenClient1HasBeenCalled).eql(true);
-                should(_isListenClient2HasBeenCalled).eql(true);
-                should(_isErrorHasBeenCalled).eql(true);
-
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
-                  });
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
                 });
-              }, 100);
 
-              setTimeout(() => {
-                _client2.send('endpoint/1.0/1', { test : 'hello world' });
-              }, 20);
+                _client1.listen('endpoint_2/1.0/*', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/1.0/*', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
+              });
             });
           });
         });
-      });
 
-      it('should allow client1 to read and client2 : /endpoint/* a listen to /endpoint/*', done => {
-        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-        _configBroker.rules = [
-          {
-            client : 'client_1',
-            read   : ['endpoint/*']
-          }
-        ];
+        it('should allow client1 to read and client2 : /endpoint/* & listen to /endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              read   : ['endpoint/*']
+            }
+          ];
 
-        let _client1 = client();
-        let _client2 = client();
+          let _client1 = client();
+          let _client2 = client();
 
-        let _broker1 = broker(_configBroker);
+          let _broker1 = broker(_configBroker);
 
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client1',
-            hosts         : [
-              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-            ]
-          }, () => {
-            _client2.connect({
-              clientId      : 'client_2',
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client2',
+              keysName      : 'client1',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
-              let _isListenClient1HasBeenCalled = false;
-              let _isListenClient2HasBeenCalled = false;
-              let _isErrorHasBeenCalled         = false;
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
 
-              _client1.listen('endpoint/*', (err, packet) => {
-                _isListenClient1HasBeenCalled = true;
-                should(err).not.ok();
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                _client1.listen('endpoint_2/*', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/*', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 150);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
               });
+            });
+          });
+        });
 
-              _client1.listen('endpoint_2/*', (err, packet) => {
-                _isErrorHasBeenCalled = true;
-                should(err).eql('Not allowed');
-              });
+        it('should allow client_*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              read   : ['endpoint/1.0/1']
+            }
+          ];
 
-              _client2.listen('endpoint/*', (err, packet, info) => {
-                _isListenClient2HasBeenCalled = true;
-                should(err).not.ok();
-              });
+          let _client1 = client();
+          let _client2 = client();
 
-              setTimeout(() => {
-                should(_isListenClient1HasBeenCalled).eql(true);
-                should(_isListenClient2HasBeenCalled).eql(true);
-                should(_isErrorHasBeenCalled).eql(true);
+          let _broker1 = broker(_configBroker);
 
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
+          let _isListenClient1HasBeenCalled = false;
+          let _isListenClient2HasBeenCalled = false;
+          let _isErrorHasBeenCalled         = false;
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                _client1.listen('endpoint/1.0/1', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
                   });
                 });
-              }, 100);
 
-              setTimeout(() => {
-                _client2.send('endpoint/1.0/1', { test : 'hello world' });
-              }, 20);
+                _client1.listen('endpoint/1.0/2', (err, packet) => {
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  _isErrorHasBeenCalled = true;
+                });
+
+                _client2.listen('endpoint/1.0/1', (err, packet) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 150);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                  });
+                }, 20);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* : /endpoint/1.0/* & listen to /endpoint/1.0/param', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              read   : ['endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
+                _client1.listen('endpoint/1.0/1', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                _client1.listen('endpoint/1.1/2', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/1.0/1', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 150);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* : /endpoint/1.0/* & listen to /endpoint/1.0/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              read   : ['endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                _client1.listen('endpoint/1.1/*', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/1.0/*', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 150);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* : /endpoint/* & listen to /endpoint/version/param', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              read   : ['endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
+
+                _client1.listen('endpoint/1.0/1', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                _client1.listen('endpoint_2/1.0/1', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/1.0/1', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 150);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* : /endpoint/* & listen to /endpoint/version/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              read   : ['endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
+
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                _client1.listen('endpoint_2/1.0/*', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/1.0/*', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 150);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* : /endpoint/* & listen to /endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              read   : ['endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _isListenClient1HasBeenCalled = false;
+                let _isListenClient2HasBeenCalled = false;
+                let _isErrorHasBeenCalled         = false;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _isListenClient1HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                _client1.listen('endpoint_2/*', (err, packet) => {
+                  _isErrorHasBeenCalled = true;
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                });
+
+                _client2.listen('endpoint/*', (err, packet, info) => {
+                  _isListenClient2HasBeenCalled = true;
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_isListenClient1HasBeenCalled).eql(true);
+                  should(_isListenClient2HasBeenCalled).eql(true);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 150);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                }, 20);
+              });
+            });
+          });
+        });
+
+      });
+
+      describe('write', () => {
+
+        it('should allow client1 & client2 to write : rule endpoint/version/param', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              write  : ['endpoint/1.0/1']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived   = 0;
+                let _nbMessagesSent       = 0;
+                let _isErrorHasBeenCalled = false;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _isErrorHasBeenCalled = true;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client1 & client2 to write : rule endpoint/version/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              write  : ['endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(3);
+                  should(_nbErrors).eql(1);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client1 & client2 to write : rule endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              write  : ['endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet, info) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint_2/1.1/1', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(3);
+                  should(_nbErrors).eql(1);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 200);
+              });
+            });
+          });
+        });
+
+        it('should allow client1 & client2 to write : rule endpoint/version/param & send to endpoint/param/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              write  : ['endpoint/1.0/1']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived   = 0;
+                let _nbMessagesSent       = 0;
+                let _isErrorHasBeenCalled = false;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _isErrorHasBeenCalled = true;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client1 & client2 to write : rule endpoint/version/param & send to endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              write  : ['endpoint/1.0/1']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived   = 0;
+                let _nbMessagesSent       = 0;
+                let _isErrorHasBeenCalled = false;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _isErrorHasBeenCalled = true;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client1 & client2 to write : rule endpoint/version/* & send to endpoint/version/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              write  : ['endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived   = 0;
+                let _nbMessagesSent       = 0;
+                let _isErrorHasBeenCalled = false;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.1/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _isErrorHasBeenCalled = true;
+                  });
+
+                  _client1.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).not.eql();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.eql();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client1 & client2 to write : rule endpoint/version/* & send to endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              write  : ['endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived   = 0;
+                let _nbMessagesSent       = 0;
+                let _isErrorHasBeenCalled = false;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _isErrorHasBeenCalled = true;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client1 & client2 to write : rule endpoint/* & send to endpoint/param/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              write  : ['endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived   = 0;
+                let _nbMessagesSent       = 0;
+                let _isErrorHasBeenCalled = false;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint_2/1.1/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _isErrorHasBeenCalled = true;
+                  });
+
+                  _client1.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).not.eql();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
+                    should(err).not.eql();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client1 & client2 to write : rule endpoint/* & send to endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              write  : ['endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived   = 0;
+                let _nbMessagesSent       = 0;
+                let _isErrorHasBeenCalled = false;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint_v2/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _isErrorHasBeenCalled = true;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.1/*', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_isErrorHasBeenCalled).eql(true);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to write : rule endpoint/version/param', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              write  : ['endpoint/1.0/1']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived   = 0;
+                let _nbMessagesSent       = 0;
+                let _nbErrors             = 0;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client2.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 150);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to write : rule endpoint/version/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              write  : ['endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client2.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(3);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to write : rule endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              write  : ['endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet, info) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint_2/1.1/1', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client2.send('endpoint_2/1.1/1', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(3);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 200);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to write : rule endpoint/version/param & send to endpoint/param/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              write  : ['endpoint/1.0/1']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to write : rule endpoint/version/param & send to endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              write  : ['endpoint/1.0/1']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+                  _client2.send('endpoint/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to write : rule endpoint/version/* & send to endpoint/version/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              write  : ['endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/1.1/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+                  _client2.send('endpoint/1.1/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client1.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).not.eql();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).not.eql();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to write : rule endpoint/version/* & send to endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              write  : ['endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+                  _client2.send('endpoint/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to write : rule endpoint/* & send to endpoint/param/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              write  : ['endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint_2/1.1/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+                  _client2.send('endpoint_2/1.1/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client1.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                    should(err).not.eql();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.1/*', { test : 'hello world' }, (err) => {
+                    should(err).not.eql();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 150);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to write : rule endpoint/* & send to endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              write  : ['endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbMessagesReceived = 0;
+                let _nbMessagesSent     = 0;
+                let _nbErrors           = 0;
+
+                _client1.listen('endpoint/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  _client1.send('endpoint_v2/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+                  _client2.send('endpoint_v2/*', { test : 'hello world' }, (err) => {
+                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    _nbErrors++;
+                  });
+
+                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+
+                  _client2.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                    _nbMessagesSent++;
+                  });
+                }, 20);
+
+                setTimeout(() => {
+                  should(_nbMessagesSent).eql(_nbMessagesReceived);
+                  should(_nbMessagesSent).eql(2);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+              });
             });
           });
         });
