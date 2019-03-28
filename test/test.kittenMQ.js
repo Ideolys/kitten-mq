@@ -181,48 +181,6 @@ describe('kitten-mq', () => {
           });
         });
       });
-
-      it('should allow multiple connections for a clientId', done => {
-        const _clientConfig = {
-          clientId      : 'client-1',
-          keysDirectory : path.join(__dirname, 'keys'),
-          keysName      : 'client',
-          hosts         : [
-            'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-          ]
-        };
-
-        let _broker1 = broker(configBroker1);
-        let _client1 = client();
-        let _client2 = client();
-
-        _broker1.start(() => {
-          _client1.connect(_clientConfig, () => {
-            _client2.connect(_clientConfig, () => {
-
-              setTimeout(() => {
-                should(_broker1.clients).have.key('client-1')
-                should(_broker1.clients['client-1']).be.an.Array().and.have.lengthOf(2);
-
-                _client1.disconnect(() => {
-
-                  setTimeout(() =>  {
-                    should(_broker1.clients['client-1']).be.an.Array().and.have.lengthOf(1);
-
-                    _client2.disconnect(() => {
-
-                      setTimeout(() => {
-                        should(_broker1.clients['client-1']).be.an.Array().and.have.lengthOf(0);
-                        _broker1.stop(done);
-                      }, 20);
-                    });
-                  }, 20)
-                });
-              }, 50);
-            });
-          });
-        });
-      });
     });
 
   });
@@ -793,7 +751,7 @@ describe('kitten-mq', () => {
         });
       });
 
-      it('should listen for multiple params /endpoint/*', done => {
+      it('should not listen for multiple params /endpoint/*', done => {
         let _client1 = client();
         let _client2 = client();
 
@@ -819,26 +777,12 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('endpoint/*', (err, packet, info) => {
-                should(err).not.ok();
+                should(err).eql(constants.ERRORS.BAD_ENPOINT);
                 _nbCalls++;
-
-                if (_nbCalls === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
-                }
-                else if (_nbCalls === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
-                }
-                else {
-                  should(info.channel).eql('endpoint/1.1/3');
-                }
-
-                should(packet).eql({
-                  test : 'hello world'
-                });
               });
 
               setTimeout(() => {
-                should(_nbCalls).eql(3);
+                should(_nbCalls).eql(1);
 
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
@@ -857,7 +801,7 @@ describe('kitten-mq', () => {
         });
       });
 
-      it('should listen for multiple params /endpoint/* & listen for /endpoint/1.0/* &  & listen for /endpoint/1.1/3', done => {
+      it('should not listen for multiple params /endpoint/* & listen for /endpoint/1.0/* &  & listen for /endpoint/1.1/3', done => {
         let _client1 = client();
         let _client2 = client();
 
@@ -885,22 +829,8 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('endpoint/*', (err, packet, info) => {
-                should(err).not.ok();
+                should(err).eql(constants.ERRORS.BAD_ENPOINT);
                 _nbCallsListener1++;
-
-                if (_nbCallsListener1 === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
-                }
-                else if (_nbCallsListener1 === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
-                }
-                else {
-                  should(info.channel).eql('endpoint/1.1/3');
-                }
-
-                should(packet).eql({
-                  test : 'hello world'
-                });
               });
 
               _client1.listen('endpoint/1.0/*', (err, packet, info) => {
@@ -930,7 +860,7 @@ describe('kitten-mq', () => {
               });
 
               setTimeout(() => {
-                should(_nbCallsListener1).eql(3);
+                should(_nbCallsListener1).eql(1);
                 should(_nbCallsListener2).eql(2);
                 should(_nbCallsListener3).eql(1);
 
@@ -1476,7 +1406,7 @@ describe('kitten-mq', () => {
         });
       });
 
-      it('should consume for multiple params /endpoint/*', done => {
+      it('should not consume for multiple params /endpoint/*', done => {
         let _client1 = client();
         let _client2 = client();
 
@@ -1502,28 +1432,12 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.consume('endpoint/*', (err, packet, ack, info) => {
-                should(err).not.ok();
+                should(err).eql(constants.ERRORS.BAD_ENPOINT)
                 _nbCalls++;
-
-                if (_nbCalls === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
-                }
-                else if (_nbCalls === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
-                }
-                else {
-                  should(info.channel).eql('endpoint/1.1/3');
-                }
-
-                should(packet).eql({
-                  test : 'hello world'
-                });
-
-                ack();
               });
 
               setTimeout(() => {
-                should(_nbCalls).eql(3);
+                should(_nbCalls).eql(1);
 
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
@@ -1542,7 +1456,7 @@ describe('kitten-mq', () => {
         });
       });
 
-      it('should consume for multiple params /endpoint/* & consume for /endpoint/1.0/* &  & consume for /endpoint/1.1/3', done => {
+      it('should not consume for multiple params /endpoint/* & consume for /endpoint/1.0/* &  & consume for /endpoint/1.1/3', done => {
         let _client1 = client();
         let _client2 = client();
 
@@ -1570,23 +1484,8 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.consume('endpoint/*', (err, packet, ack, info) => {
-                should(err).not.ok();
+                should(err).eql(constants.ERRORS.BAD_ENPOINT);
                 _nbCallsListener1++;
-
-                if (_nbCallsListener1 === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
-                }
-                else if (_nbCallsListener1 === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
-                }
-                else {
-                  should(info.channel).eql('endpoint/1.1/3');
-                }
-
-                should(packet).eql({
-                  test : 'hello world'
-                });
-                ack();
               });
 
               _client1.consume('endpoint/1.0/*', (err, packet, ack, info) => {
@@ -1618,7 +1517,7 @@ describe('kitten-mq', () => {
               });
 
               setTimeout(() => {
-                should(_nbCallsListener1).eql(3);
+                should(_nbCallsListener1).eql(1);
                 should(_nbCallsListener2).eql(2);
                 should(_nbCallsListener3).eql(1);
 
@@ -1687,7 +1586,7 @@ describe('kitten-mq', () => {
 
     describe('send()', () => {
 
-      it('should send to /endpoint/versions/*', done => {
+      it('should not send to /endpoint/*', done => {
         let _client1 = client();
         let _client2 = client();
 
@@ -1710,39 +1609,14 @@ describe('kitten-mq', () => {
                 'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
-              let _isListener1HasBeenCalled = false;
-              let _isListener2HasBeenCalled = false;
-
-              _client1.listen('endpoint/1.0/test', (err, packet) => {
-                should(err).not.ok();
-                should(packet).eql({
-                  test : 'hello world'
-                });
-                _isListener1HasBeenCalled = true;
-              });
-
-              _client1.listen('endpoint/1.4/test', (err, packet) => {
-                should(err).not.ok();
-                should(packet).eql({
-                  test : 'hello world'
-                });
-                _isListener2HasBeenCalled = true;
-              });
-
-              setTimeout(() => {
-                should(_isListener1HasBeenCalled).eql(true);
-                should(_isListener2HasBeenCalled).eql(true);
-
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
-                  });
-                });
-              }, 100);
-
               setTimeout(() => {
                 _client2.send('endpoint/*', { test : 'hello world' }, (err) => {
-                  should(err).not.ok();
+                  should(err).eql(constants.ERRORS.BAD_ENPOINT);
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
                 });
               }, 20);
             });
@@ -1750,7 +1624,7 @@ describe('kitten-mq', () => {
         });
       });
 
-      it('should send to /endpoint/*', done => {
+      it('should send to /endpoint/versions/*', done => {
         let _client1 = client();
         let _client2 = client();
 
@@ -1801,7 +1675,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 60);
+              }, 100);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
@@ -2421,76 +2295,6 @@ describe('kitten-mq', () => {
           });
         });
 
-        it('should allow client1 to read and client2 : /endpoint/* & listen to /endpoint/*', done => {
-          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-          _configBroker.rules = [
-            {
-              client : 'client_1',
-              read   : ['endpoint/*']
-            }
-          ];
-
-          let _client1 = client();
-          let _client2 = client();
-
-          let _broker1 = broker(_configBroker);
-
-          _broker1.start(() => {
-            _client1.connect({
-              clientId      : 'client_1',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client1',
-              hosts         : [
-                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-              ]
-            }, () => {
-              _client2.connect({
-                clientId      : 'client_2',
-                keysDirectory : path.join(__dirname, 'keys'),
-                keysName      : 'client2',
-                hosts         : [
-                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-                ]
-              }, () => {
-                let _isListenClient1HasBeenCalled = false;
-                let _isListenClient2HasBeenCalled = false;
-                let _isErrorHasBeenCalled         = false;
-
-                _client1.listen('endpoint/*', (err, packet) => {
-                  _isListenClient1HasBeenCalled = true;
-                  should(err).not.ok();
-                });
-
-                _client1.listen('endpoint_2/*', (err, packet) => {
-                  _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                });
-
-                _client2.listen('endpoint/*', (err, packet, info) => {
-                  _isListenClient2HasBeenCalled = true;
-                  should(err).not.ok();
-                });
-
-                setTimeout(() => {
-                  should(_isListenClient1HasBeenCalled).eql(true);
-                  should(_isListenClient2HasBeenCalled).eql(true);
-                  should(_isErrorHasBeenCalled).eql(true);
-
-                  _client1.disconnect(() => {
-                    _client2.disconnect(() => {
-                      _broker1.stop(done);
-                    });
-                  });
-                }, 150);
-
-                setTimeout(() => {
-                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
-                }, 20);
-              });
-            });
-          });
-        });
-
         it('should allow client_*', done => {
           let _configBroker = JSON.parse(JSON.stringify(configBroker1));
           _configBroker.rules = [
@@ -2844,76 +2648,6 @@ describe('kitten-mq', () => {
           });
         });
 
-        it('should allow client_* : /endpoint/* & listen to /endpoint/*', done => {
-          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-          _configBroker.rules = [
-            {
-              client : 'client_1',
-              read   : ['endpoint/*']
-            }
-          ];
-
-          let _client1 = client();
-          let _client2 = client();
-
-          let _broker1 = broker(_configBroker);
-
-          _broker1.start(() => {
-            _client1.connect({
-              clientId      : 'client_1',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client1',
-              hosts         : [
-                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-              ]
-            }, () => {
-              _client2.connect({
-                clientId      : 'client_2',
-                keysDirectory : path.join(__dirname, 'keys'),
-                keysName      : 'client2',
-                hosts         : [
-                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-                ]
-              }, () => {
-                let _isListenClient1HasBeenCalled = false;
-                let _isListenClient2HasBeenCalled = false;
-                let _isErrorHasBeenCalled         = false;
-
-                _client1.listen('endpoint/*', (err, packet) => {
-                  _isListenClient1HasBeenCalled = true;
-                  should(err).not.ok();
-                });
-
-                _client1.listen('endpoint_2/*', (err, packet) => {
-                  _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                });
-
-                _client2.listen('endpoint/*', (err, packet, info) => {
-                  _isListenClient2HasBeenCalled = true;
-                  should(err).not.ok();
-                });
-
-                setTimeout(() => {
-                  should(_isListenClient1HasBeenCalled).eql(true);
-                  should(_isListenClient2HasBeenCalled).eql(true);
-                  should(_isErrorHasBeenCalled).eql(true);
-
-                  _client1.disconnect(() => {
-                    _client2.disconnect(() => {
-                      _broker1.stop(done);
-                    });
-                  });
-                }, 150);
-
-                setTimeout(() => {
-                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
-                }, 20);
-              });
-            });
-          });
-        });
-
       });
 
       describe('write', () => {
@@ -2953,7 +2687,7 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent       = 0;
                 let _isErrorHasBeenCalled = false;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3029,7 +2763,7 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent     = 0;
                 let _nbErrors           = 0;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3069,7 +2803,7 @@ describe('kitten-mq', () => {
                       _broker1.stop(done);
                     });
                   });
-                }, 100);
+                }, 150);
               });
             });
           });
@@ -3110,7 +2844,7 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent     = 0;
                 let _nbErrors           = 0;
 
-                _client1.listen('endpoint/*', (err, packet, info) => {
+                _client1.listen('endpoint/1.0/*', (err, packet, info) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3191,7 +2925,7 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent       = 0;
                 let _isErrorHasBeenCalled = false;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3211,82 +2945,6 @@ describe('kitten-mq', () => {
                   });
 
                   _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
-                    _nbMessagesSent++;
-                  });
-                }, 20);
-
-                setTimeout(() => {
-                  should(_nbMessagesSent).eql(_nbMessagesReceived);
-                  should(_nbMessagesSent).eql(2);
-                  should(_isErrorHasBeenCalled).eql(true);
-
-                  _client1.disconnect(() => {
-                    _client2.disconnect(() => {
-                      _broker1.stop(done);
-                    });
-                  });
-                }, 100);
-              });
-            });
-          });
-        });
-
-        it('should allow client1 & client2 to write : rule endpoint/version/param & send to endpoint/*', done => {
-          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-          _configBroker.rules = [
-            {
-              client : 'client_1',
-              write  : ['endpoint/1.0/1']
-            }
-          ];
-
-          let _client1 = client();
-          let _client2 = client();
-
-          let _broker1 = broker(_configBroker);
-
-          _broker1.start(() => {
-            _client1.connect({
-              clientId      : 'client_1',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client1',
-              hosts         : [
-                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-              ]
-            }, () => {
-              _client2.connect({
-                clientId      : 'client_2',
-                keysDirectory : path.join(__dirname, 'keys'),
-                keysName      : 'client2',
-                hosts         : [
-                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-                ]
-              }, () => {
-                let _nbMessagesReceived   = 0;
-                let _nbMessagesSent       = 0;
-                let _isErrorHasBeenCalled = false;
-
-                _client1.listen('endpoint/*', (err, packet) => {
-                  _nbMessagesReceived++;
-                  should(err).not.ok();
-                  should(packet).eql({
-                    test : 'hello world'
-                  });
-                });
-
-                setTimeout(() => {
-                  _client1.send('endpoint/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                    _isErrorHasBeenCalled = true;
-                  });
-
-                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
-                    _nbMessagesSent++;
-                  });
-
-                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
                     should(err).not.ok();
                     _nbMessagesSent++;
                   });
@@ -3343,7 +3001,7 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent       = 0;
                 let _isErrorHasBeenCalled = false;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3364,82 +3022,6 @@ describe('kitten-mq', () => {
 
                   _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
                     should(err).not.eql();
-                    _nbMessagesSent++;
-                  });
-                }, 20);
-
-                setTimeout(() => {
-                  should(_nbMessagesSent).eql(_nbMessagesReceived);
-                  should(_nbMessagesSent).eql(2);
-                  should(_isErrorHasBeenCalled).eql(true);
-
-                  _client1.disconnect(() => {
-                    _client2.disconnect(() => {
-                      _broker1.stop(done);
-                    });
-                  });
-                }, 100);
-              });
-            });
-          });
-        });
-
-        it('should allow client1 & client2 to write : rule endpoint/version/* & send to endpoint/*', done => {
-          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-          _configBroker.rules = [
-            {
-              client : 'client_1',
-              write  : ['endpoint/1.0/*']
-            }
-          ];
-
-          let _client1 = client();
-          let _client2 = client();
-
-          let _broker1 = broker(_configBroker);
-
-          _broker1.start(() => {
-            _client1.connect({
-              clientId      : 'client_1',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client1',
-              hosts         : [
-                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-              ]
-            }, () => {
-              _client2.connect({
-                clientId      : 'client_2',
-                keysDirectory : path.join(__dirname, 'keys'),
-                keysName      : 'client2',
-                hosts         : [
-                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-                ]
-              }, () => {
-                let _nbMessagesReceived   = 0;
-                let _nbMessagesSent       = 0;
-                let _isErrorHasBeenCalled = false;
-
-                _client1.listen('endpoint/*', (err, packet) => {
-                  _nbMessagesReceived++;
-                  should(err).not.ok();
-                  should(packet).eql({
-                    test : 'hello world'
-                  });
-                });
-
-                setTimeout(() => {
-                  _client1.send('endpoint/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                    _isErrorHasBeenCalled = true;
-                  });
-
-                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
-                    _nbMessagesSent++;
-                  });
-
-                  _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
                     _nbMessagesSent++;
                   });
                 }, 20);
@@ -3495,7 +3077,14 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent       = 0;
                 let _isErrorHasBeenCalled = false;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+                _client1.listen('endpoint/1.1/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3516,82 +3105,6 @@ describe('kitten-mq', () => {
 
                   _client2.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
                     should(err).not.eql();
-                    _nbMessagesSent++;
-                  });
-                }, 20);
-
-                setTimeout(() => {
-                  should(_nbMessagesSent).eql(_nbMessagesReceived);
-                  should(_nbMessagesSent).eql(2);
-                  should(_isErrorHasBeenCalled).eql(true);
-
-                  _client1.disconnect(() => {
-                    _client2.disconnect(() => {
-                      _broker1.stop(done);
-                    });
-                  });
-                }, 100);
-              });
-            });
-          });
-        });
-
-        it('should allow client1 & client2 to write : rule endpoint/* & send to endpoint/*', done => {
-          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-          _configBroker.rules = [
-            {
-              client : 'client_1',
-              write  : ['endpoint/*']
-            }
-          ];
-
-          let _client1 = client();
-          let _client2 = client();
-
-          let _broker1 = broker(_configBroker);
-
-          _broker1.start(() => {
-            _client1.connect({
-              clientId      : 'client_1',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client1',
-              hosts         : [
-                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-              ]
-            }, () => {
-              _client2.connect({
-                clientId      : 'client_2',
-                keysDirectory : path.join(__dirname, 'keys'),
-                keysName      : 'client2',
-                hosts         : [
-                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-                ]
-              }, () => {
-                let _nbMessagesReceived   = 0;
-                let _nbMessagesSent       = 0;
-                let _isErrorHasBeenCalled = false;
-
-                _client1.listen('endpoint/*', (err, packet) => {
-                  _nbMessagesReceived++;
-                  should(err).not.ok();
-                  should(packet).eql({
-                    test : 'hello world'
-                  });
-                });
-
-                setTimeout(() => {
-                  _client1.send('endpoint_v2/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                    _isErrorHasBeenCalled = true;
-                  });
-
-                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
-                    _nbMessagesSent++;
-                  });
-
-                  _client2.send('endpoint/1.1/*', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
                     _nbMessagesSent++;
                   });
                 }, 20);
@@ -3647,7 +3160,7 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent       = 0;
                 let _nbErrors             = 0;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3728,7 +3241,7 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent     = 0;
                 let _nbErrors           = 0;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3814,7 +3327,14 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent     = 0;
                 let _nbErrors           = 0;
 
-                _client1.listen('endpoint/*', (err, packet, info) => {
+                _client1.listen('endpoint/1.0/*', (err, packet, info) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+                _client1.listen('endpoint/1.1/*', (err, packet, info) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3828,7 +3348,7 @@ describe('kitten-mq', () => {
                     _nbMessagesSent++;
                   });
 
-                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                  _client1.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
                     should(err).not.ok();
                     _nbMessagesSent++;
                   });
@@ -3900,7 +3420,7 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent     = 0;
                 let _nbErrors           = 0;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -3925,86 +3445,6 @@ describe('kitten-mq', () => {
                   });
 
                   _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
-                    _nbMessagesSent++;
-                  });
-                }, 20);
-
-                setTimeout(() => {
-                  should(_nbMessagesSent).eql(_nbMessagesReceived);
-                  should(_nbMessagesSent).eql(2);
-                  should(_nbErrors).eql(2);
-
-                  _client1.disconnect(() => {
-                    _client2.disconnect(() => {
-                      _broker1.stop(done);
-                    });
-                  });
-                }, 100);
-              });
-            });
-          });
-        });
-
-        it('should allow client_* to write : rule endpoint/version/param & send to endpoint/*', done => {
-          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-          _configBroker.rules = [
-            {
-              client : 'client_*',
-              write  : ['endpoint/1.0/1']
-            }
-          ];
-
-          let _client1 = client();
-          let _client2 = client();
-
-          let _broker1 = broker(_configBroker);
-
-          _broker1.start(() => {
-            _client1.connect({
-              clientId      : 'client_1',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client1',
-              hosts         : [
-                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-              ]
-            }, () => {
-              _client2.connect({
-                clientId      : 'client_2',
-                keysDirectory : path.join(__dirname, 'keys'),
-                keysName      : 'client2',
-                hosts         : [
-                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-                ]
-              }, () => {
-                let _nbMessagesReceived = 0;
-                let _nbMessagesSent     = 0;
-                let _nbErrors           = 0;
-
-                _client1.listen('endpoint/*', (err, packet) => {
-                  _nbMessagesReceived++;
-                  should(err).not.ok();
-                  should(packet).eql({
-                    test : 'hello world'
-                  });
-                });
-
-                setTimeout(() => {
-                  _client1.send('endpoint/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                    _nbErrors++;
-                  });
-                  _client2.send('endpoint/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                    _nbErrors++;
-                  });
-
-                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
-                    _nbMessagesSent++;
-                  });
-
-                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
                     should(err).not.ok();
                     _nbMessagesSent++;
                   });
@@ -4061,7 +3501,7 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent     = 0;
                 let _nbErrors           = 0;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -4086,86 +3526,6 @@ describe('kitten-mq', () => {
 
                   _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
                     should(err).not.eql();
-                    _nbMessagesSent++;
-                  });
-                }, 20);
-
-                setTimeout(() => {
-                  should(_nbMessagesSent).eql(_nbMessagesReceived);
-                  should(_nbMessagesSent).eql(2);
-                  should(_nbErrors).eql(2);
-
-                  _client1.disconnect(() => {
-                    _client2.disconnect(() => {
-                      _broker1.stop(done);
-                    });
-                  });
-                }, 100);
-              });
-            });
-          });
-        });
-
-        it('should allow client_* to write : rule endpoint/version/* & send to endpoint/*', done => {
-          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-          _configBroker.rules = [
-            {
-              client : 'client_*',
-              write  : ['endpoint/1.0/*']
-            }
-          ];
-
-          let _client1 = client();
-          let _client2 = client();
-
-          let _broker1 = broker(_configBroker);
-
-          _broker1.start(() => {
-            _client1.connect({
-              clientId      : 'client_1',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client1',
-              hosts         : [
-                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-              ]
-            }, () => {
-              _client2.connect({
-                clientId      : 'client_2',
-                keysDirectory : path.join(__dirname, 'keys'),
-                keysName      : 'client2',
-                hosts         : [
-                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-                ]
-              }, () => {
-                let _nbMessagesReceived = 0;
-                let _nbMessagesSent     = 0;
-                let _nbErrors           = 0;
-
-                _client1.listen('endpoint/*', (err, packet) => {
-                  _nbMessagesReceived++;
-                  should(err).not.ok();
-                  should(packet).eql({
-                    test : 'hello world'
-                  });
-                });
-
-                setTimeout(() => {
-                  _client1.send('endpoint/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                    _nbErrors++;
-                  });
-                  _client2.send('endpoint/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                    _nbErrors++;
-                  });
-
-                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
-                    _nbMessagesSent++;
-                  });
-
-                  _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
                     _nbMessagesSent++;
                   });
                 }, 20);
@@ -4221,7 +3581,14 @@ describe('kitten-mq', () => {
                 let _nbMessagesSent     = 0;
                 let _nbErrors           = 0;
 
-                _client1.listen('endpoint/*', (err, packet) => {
+                _client1.listen('endpoint/1.0/*', (err, packet) => {
+                  _nbMessagesReceived++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+                _client1.listen('endpoint/1.1/*', (err, packet) => {
                   _nbMessagesReceived++;
                   should(err).not.ok();
                   should(packet).eql({
@@ -4265,87 +3632,71 @@ describe('kitten-mq', () => {
             });
           });
         });
+      });
+    });
 
-        it('should allow client_* to write : rule endpoint/* & send to endpoint/*', done => {
-          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
-          _configBroker.rules = [
-            {
-              client : 'client_*',
-              write  : ['endpoint/*']
-            }
-          ];
+    describe.skip('disconnection', () => {
 
-          let _client1 = client();
-          let _client2 = client();
+      it('should not crash if client_1 dies', done => {
+        let _client1 = client();
+        let _client2 = client();
 
-          let _broker1 = broker(_configBroker);
+        let _broker1 = broker(configBroker1);
 
-          _broker1.start(() => {
-            _client1.connect({
-              clientId      : 'client_1',
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client1',
+              keysName      : 'client2',
               hosts         : [
                 'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
               ]
             }, () => {
-              _client2.connect({
-                clientId      : 'client_2',
-                keysDirectory : path.join(__dirname, 'keys'),
-                keysName      : 'client2',
-                hosts         : [
-                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
-                ]
-              }, () => {
-                let _nbMessagesReceived = 0;
-                let _nbMessagesSent     = 0;
-                let _nbErrors           = 0;
 
-                _client1.listen('endpoint/*', (err, packet) => {
-                  _nbMessagesReceived++;
-                  should(err).not.ok();
-                  should(packet).eql({
-                    test : 'hello world'
-                  });
+              _client1.consume('endpoint/1.0/test', (err, packet) => {
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
                 });
 
-                setTimeout(() => {
-                  _client1.send('endpoint_v2/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                    _nbErrors++;
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
                   });
-                  _client2.send('endpoint_v2/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
-                    _nbErrors++;
-                  });
-
-                  _client1.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
-                    _nbMessagesSent++;
-                  });
-
-                  _client2.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
-                    should(err).not.ok();
-                    _nbMessagesSent++;
-                  });
-                }, 20);
-
-                setTimeout(() => {
-                  should(_nbMessagesSent).eql(_nbMessagesReceived);
-                  should(_nbMessagesSent).eql(2);
-                  should(_nbErrors).eql(2);
-
-                  _client1.disconnect(() => {
-                    _client2.disconnect(() => {
-                      _broker1.stop(done);
-                    });
-                  });
-                }, 100);
+                });
               });
+
+              _client1.disconnect();
+
+              setTimeout(() => {
+                _client1.connect({
+                  clientId      : 'client_1',
+                  keysDirectory : path.join(__dirname, 'keys'),
+                  keysName      : 'client',
+                  hosts         : [
+                    'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId + '@' + configBroker1.serviceId
+                  ]
+                });
+              }, 40);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
             });
           });
         });
       });
+
     });
   });
 

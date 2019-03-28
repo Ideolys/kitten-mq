@@ -74,7 +74,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
   })
 
   // You can use wildcard to listen many channels, and aknowledge
-  mq.listen('endpoint/v1/*', (msg, info, done) => {
+  mq.listen('endpoint/v1/*', (err, msg, info, done) => {
     console.log(info.endpoint);
     console.log(info.version);
     console.log(info.id);
