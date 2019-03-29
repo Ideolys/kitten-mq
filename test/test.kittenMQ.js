@@ -924,6 +924,70 @@ describe('kitten-mq', () => {
           });
         });
       });
+
+      it('should listen for multiple ids', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbCallsListener2 = 0;
+
+              _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _client2.listen('endpoint/1.0/4', (err, packet) => {
+                _nbCallsListener2++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              setTimeout(() => {
+                should(_nbCallsListener1).eql(3);
+                should(_nbCallsListener2).eql(1);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                _client2.send('endpoint/1.0/4', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
     });
 
     describe('consume()', () => {
