@@ -960,7 +960,7 @@ describe('kitten-mq', () => {
                 ack();
 
                 setTimeout(() => {
-                  should(_broker1._queues['endpoint'].queue).eql([]);
+                  should(_broker1._queues['endpoint/1.0'].queue).eql([]);
                   _client1.disconnect(() => {
                     _client2.disconnect(() => {
                       _broker1.stop(done);
@@ -1738,7 +1738,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 60);
+              }, 100);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
@@ -1788,7 +1788,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 should(_nbCalls).eql(3);
-                should(_broker1._queues['endpoint'].queue).eql([]);
+                should(_broker1._queues['endpoint/1.0'].queue).eql([]);
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
                     _broker1.stop(done);
@@ -1847,7 +1847,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 should(_nbCalls).eql(2);
-                should(_broker1._queues['endpoint'].queue).eql([]);
+                should(_broker1._queues['endpoint/1.0'].queue).eql([]);
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
                     _broker1.stop(done);
