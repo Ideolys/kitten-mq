@@ -2750,6 +2750,244 @@ describe('kitten-mq', () => {
           });
         });
 
+        it('should allow client1 and refused client2 to read : !endpoint/version/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_1',
+              read   : ['!endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbCallsListener1 = 0;
+                let _nbCallsListener2 = 0;
+                let _nbErrors         = 0;
+
+                _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
+                  _nbCallsListener1++;
+
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                _client2.listen('endpoint/1.0/1', (err, packet) => {
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  _nbErrors++;
+                });
+
+                _client2.listen('endpoint/1.0/3', (err, packet) => {
+                  _nbCallsListener2++;
+
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  should(_nbCallsListener1).eql(2);
+                  should(_nbCallsListener2).eql(1);
+                  should(_nbErrors).eql(1);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                  _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                  _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                }, 20);
+              });
+            });
+          });
+        });
+
+        it('should allow client_* to read : !endpoint/version/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              read   : ['!endpoint/1.0/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbCallsListener1 = 0;
+                let _nbCallsListener2 = 0;
+                let _nbErrors         = 0;
+
+                _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
+                  _nbCallsListener1++;
+
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                _client2.listen('endpoint/1.0/1', (err, packet) => {
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  _nbErrors++;
+                });
+
+                _client2.listen('endpoint/1.0/3', (err, packet) => {
+                  _nbCallsListener2++;
+
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                _client2.listen('endpoint/1.0/3', (err, packet) => {
+                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  _nbErrors++;
+                });
+
+                setTimeout(() => {
+                  should(_nbCallsListener1).eql(2);
+                  should(_nbCallsListener2).eql(1);
+                  should(_nbErrors).eql(2);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                  _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                  _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                }, 20);
+              });
+            });
+          });
+        });
+
+        it('should not add : !endpoint/*', done => {
+          let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+          _configBroker.rules = [
+            {
+              client : 'client_*',
+              read   : ['!endpoint/*']
+            }
+          ];
+
+          let _client1 = client();
+          let _client2 = client();
+
+          let _broker1 = broker(_configBroker);
+
+          _broker1.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+                ]
+              }, () => {
+                let _nbCallsListener1 = 0;
+                let _nbCallsListener2 = 0;
+
+                _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
+                  _nbCallsListener1++;
+
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                _client2.listen('endpoint/1.0/1', (err, packet) => {
+                  _nbCallsListener2++;
+
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                setTimeout(() => {
+                  should(_nbCallsListener1).eql(2);
+                  should(_nbCallsListener2).eql(1);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 100);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                  _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                  _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                }, 20);
+              });
+            });
+          });
+        });
+
       });
 
       describe('write', () => {
