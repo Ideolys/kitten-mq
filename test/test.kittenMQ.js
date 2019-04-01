@@ -16,11 +16,6 @@ const configBroker1 = {
     logs            : 'packets',
     packetsFilename : 'broker1.log'
   },
-  managementSocket : {
-    port            : 1235,
-    logs            : 'packets',
-    packetsFilename : 'management1.log'
-  },
   isMaster : true
 };
 
@@ -33,11 +28,6 @@ const configBroker2 = {
     port            : 1236,
     logs            : 'packets',
     packetsFilename : 'broker2.log'
-  },
-  managementSocket : {
-    port            : 1237,
-    logs            : 'packets',
-    packetsFilename : 'management2.log'
   }
 };
 
@@ -101,37 +91,6 @@ describe('kitten-mq', () => {
             });
           });
           _broker._sockets.broker.on('message', function (messageFromClient) {
-            if (messageFromClient.data.type) {
-              return;
-            }
-
-            should(messageFromClient.data).eql('1# hello, Im the client');
-            messageFromClient.send('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
-          });
-        });
-      });
-
-      it('should instanciate management socket server', done => {
-        let _broker = broker(configBroker1);
-
-        _broker.start(() => {
-          let _socketClientManagement = new Socket(configBroker1.managementSocket.port);
-
-          // start the client
-          _socketClientManagement.startClient(() => {
-            _socketClientManagement.send('1# hello, Im the client');
-          });
-          _socketClientManagement.on('message', function (messageFromServer) {
-            if (messageFromServer.data.type) {
-              return;
-            }
-
-            should(messageFromServer.data).eql('Hi, Im the server, Im the boss, the client is not the king here! So listen to me');
-            _socketClientManagement.stop(() => {
-              _broker.stop(done);
-            });
-          });
-          _broker._sockets.management.on('message', function (messageFromClient) {
             if (messageFromClient.data.type) {
               return;
             }
