@@ -2665,6 +2665,63 @@ describe('kitten-mq', () => {
         });
       });
 
+      it('should resend the message until the limit is reached to another consumer : timeout', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.requeueLimit    = 3;
+        _configBroker.requeueInterval = 0.1;
+
+        let _broker1 = broker(_configBroker);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbCallsListener2 = 0;
+              _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
+                _nbCallsListener1++;
+              });
+              _client2.consume('endpoint/1.0/test', (err, packet, ack) => {
+                _nbCallsListener2++;
+              });
+
+              setTimeout(() => {
+                should(_nbCallsListener1).eql(2);
+                should(_nbCallsListener2).eql(1);
+                should(_broker1._queues['endpoint/1.0'].queue).eql([]);
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 300);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
+            });
+          });
+        });
+      });
+
       it('should resend the message until the limit is reached : timeout & 2 brokers', done => {
         let _client1 = client();
         let _client2 = client();
