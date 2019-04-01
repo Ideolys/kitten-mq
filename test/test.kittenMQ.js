@@ -316,7 +316,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('*', (err) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT);
+                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
 
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
@@ -359,12 +359,12 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('endpoint/1.0/1', (err) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT);
+                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
               });
 
               setTimeout(() => {
                 _client2.send('*', { test : 'hello world' }, (err) => {
-                  should(err).eql(constants.ERRORS.BAD_ENPOINT);
+                  should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
 
                   _client1.disconnect(() => {
                     _client2.disconnect(() => {
@@ -777,7 +777,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('endpoint/*', (err, packet, info) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT);
+                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
                 _nbCalls++;
               });
 
@@ -829,7 +829,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('endpoint/*', (err, packet, info) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT);
+                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
                 _nbCallsListener1++;
               });
 
@@ -967,6 +967,7 @@ describe('kitten-mq', () => {
                 });
               });
 
+
               setTimeout(() => {
                 should(_nbCallsListener1).eql(3);
                 should(_nbCallsListener2).eql(1);
@@ -983,6 +984,309 @@ describe('kitten-mq', () => {
                 _client2.send('endpoint/1.0/2', { test : 'hello world' });
                 _client2.send('endpoint/1.0/3', { test : 'hello world' });
                 _client2.send('endpoint/1.0/4', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should listen for multiple ids : one addId', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _listener.addId(4, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(4);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                _client2.send('endpoint/1.0/4', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should listen for multiple ids : multiple addId', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1] }, (err, packet) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _listener.addId(2, (err) => {
+                _nbErrors++;
+              });
+              _listener.addId(3, (err) => {
+                _nbErrors++;
+              });
+              _listener.addId(4, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(4);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                _client2.send('endpoint/1.0/4', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should listen for multiple ids & add do nothing if already defined id is added', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _listener.addId(1, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(3);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should listen for multiple ids & remove id', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, info) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _listener.removeId(3, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(2);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should listen for multiple ids & remove do nothing if id is not listened', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, info) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _listener.removeId(4, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(3);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
               }, 20);
             });
           });
@@ -1067,7 +1371,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.consume('*', (err) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT);
+                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
 
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
@@ -1496,7 +1800,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.consume('endpoint/*', (err, packet, ack, info) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT)
+                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL)
                 _nbCalls++;
               });
 
@@ -1548,7 +1852,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.consume('endpoint/*', (err, packet, ack, info) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT);
+                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
                 _nbCallsListener1++;
               });
 
@@ -1675,7 +1979,7 @@ describe('kitten-mq', () => {
             }, () => {
               setTimeout(() => {
                 _client2.send('endpoint/*', { test : 'hello world' }, (err) => {
-                  should(err).eql(constants.ERRORS.BAD_ENPOINT);
+                  should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
                   _client1.disconnect(() => {
                     _client2.disconnect(() => {
                       _broker1.stop(done);
@@ -2818,7 +3122,7 @@ describe('kitten-mq', () => {
                       _broker1.stop(done);
                     });
                   });
-                }, 100);
+                }, 150);
 
                 setTimeout(() => {
                   _client2.send('endpoint/1.0/1', { test : 'hello world' });
@@ -2903,7 +3207,7 @@ describe('kitten-mq', () => {
                       _broker1.stop(done);
                     });
                   });
-                }, 100);
+                }, 150);
 
                 setTimeout(() => {
                   _client2.send('endpoint/1.0/1', { test : 'hello world' });
