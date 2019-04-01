@@ -20,8 +20,8 @@ const configBroker1 = {
 };
 
 const configBroker2 = {
-  serviceId             : 'broker-1',
-  registeredClientsPath : path.join(__dirname, 'clients'),
+  serviceId             : 'broker-2',
+  registeredClientsPath : path.join(__dirname, 'clients_2'),
   keysDirectory         : path.join(__dirname, 'keys'),
   keysName              : 'broker2',
   socketServer          : {
@@ -63,6 +63,7 @@ describe('kitten-mq', () => {
     }
 
     deleteKeys(path.join(__dirname, 'clients'));
+    deleteKeys(path.join(__dirname, 'clients_2'));
     deleteKeys(path.join(__dirname, 'keys'));
   });
 
@@ -140,6 +141,97 @@ describe('kitten-mq', () => {
           });
         });
       });
+
+      it('should send messages to each broker', done => {
+        let _client1 = client();
+
+        let _broker1 = broker(configBroker1);
+        let _broker2 = broker(configBroker2);
+
+        _broker1.start(() => {
+          _broker2.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
+                'localhost:' + configBroker2.socketServer.port + '@' + configBroker2.serviceId
+              ]
+            }, () => {
+              setTimeout(() => {
+                should(_broker1._queues['endpoint/1.0']).be.ok();
+                should(_broker2._queues['endpoint/1.0']).be.ok();
+
+                should(_broker1._queues['endpoint/1.0'].currentItem).be.ok();
+                should(_broker2._queues['endpoint/1.0'].currentItem).be.ok();
+
+                _client1.disconnect(() => {
+                  _broker2.stop(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 200);
+
+              setTimeout(() => {
+                _client1.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should ack messages on both sides', done => {
+        let _client1 = client();
+
+        let _broker1 = broker(configBroker1);
+        let _broker2 = broker(configBroker2);
+
+        _broker1.start(() => {
+          _broker2.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
+                'localhost:' + configBroker2.socketServer.port + '@' + configBroker2.serviceId
+              ]
+            }, () => {
+              let _nbCalls = 0;
+
+              _client1.listen('endpoint/1.0/test', (err, msg) => {
+                _nbCalls++;
+                should(err).be.not.ok();
+                should(msg).eql({
+                  test : 'hello world'
+                });
+              });
+
+              setTimeout(() => {
+                should(_broker1._queues['endpoint/1.0'].currentItem).eql(undefined);
+                should(_broker1._queues['endpoint/1.0'].currentItem).eql(undefined);
+                should(_nbCalls).eql(1);
+
+                _client1.disconnect(() => {
+                  _broker2.stop(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 200);
+
+              setTimeout(() => {
+                _client1.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
+            });
+          });
+        });
+      });
+
     });
 
   });
@@ -2533,6 +2625,73 @@ describe('kitten-mq', () => {
         });
       });
 
+      it('should resend the message until the limit is reached : timeout & 2 brokers', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.requeueLimit    = 3;
+        _configBroker.requeueInterval = 0.1;
+
+        let _configBroker2 = JSON.parse(JSON.stringify(configBroker2));
+        _configBroker2.requeueLimit    = 3;
+        _configBroker2.requeueInterval = 0.1;
+
+        let _broker1 = broker(_configBroker);
+        let _broker2 = broker(_configBroker2);
+
+        _broker1.start(() => {
+          _broker2.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
+                'localhost:' + configBroker2.socketServer.port + '@' + configBroker2.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
+                  'localhost:' + configBroker2.socketServer.port + '@' + configBroker2.serviceId
+                ]
+              }, () => {
+                let _nbCalls = 0;
+                _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
+                  _nbCalls++;
+                });
+
+                setTimeout(() => {
+                  should(_nbCalls).eql(3);
+                  should(_broker1._queues['endpoint/1.0']).be.ok();
+                  should(_broker1._queues['endpoint/1.0'].currentItem).eql(undefined);
+                  should(_broker2._queues['endpoint/1.0']).be.ok();
+                  should(_broker2._queues['endpoint/1.0'].currentItem).eql(undefined);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(() => {
+                        _broker2.stop(done);
+                      });
+                    });
+                  });
+                }, 400);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                  });
+                }, 20);
+              });
+            });
+          });
+        });
+      });
+
       it('should resend the message : ack false', done => {
         let _client1 = client();
         let _client2 = client();
@@ -2591,6 +2750,75 @@ describe('kitten-mq', () => {
           });
         });
       });
+
+      it('should resend the message when ack is false : 2 brokers', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.requeueLimit    = 3;
+        _configBroker.requeueInterval = 0.1;
+
+        let _configBroker2 = JSON.parse(JSON.stringify(configBroker2));
+        _configBroker2.requeueLimit    = 3;
+        _configBroker2.requeueInterval = 0.1;
+
+        let _broker1 = broker(_configBroker);
+        let _broker2 = broker(_configBroker2);
+
+        _broker1.start(() => {
+          _broker2.start(() => {
+            _client1.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client1',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
+                'localhost:' + configBroker2.socketServer.port + '@' + configBroker2.serviceId
+              ]
+            }, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
+                  'localhost:' + configBroker2.socketServer.port + '@' + configBroker2.serviceId
+                ]
+              }, () => {
+                let _nbCalls = 0;
+                _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
+                  _nbCalls++;
+                  ack(false);
+                });
+
+                setTimeout(() => {
+                  should(_nbCalls).eql(3);
+                  should(_broker1._queues['endpoint/1.0']).be.ok();
+                  should(_broker1._queues['endpoint/1.0'].currentItem).eql(undefined);
+                  should(_broker2._queues['endpoint/1.0']).be.ok();
+                  should(_broker2._queues['endpoint/1.0'].currentItem).eql(undefined);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(() => {
+                        _broker2.stop(done);
+                      });
+                    });
+                  });
+                }, 400);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                    should(err).not.ok();
+                  });
+                }, 20);
+              });
+            });
+          });
+        });
+      });
+
 
     });
 

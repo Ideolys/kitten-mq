@@ -47,7 +47,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
   // When the client connects for the first time, it pushes the public key on the broker
   // Then, the broker will accept connections for this client only if tokens are generated with the same pub/priv key
-  let mq = kittenMQ.connect(config, (err) => {
+  let mq = kittenMQ.client.connect(config, (err) => {
     // if connect failed, it retries automatically and it calls this callback for each retry
     console.log(err);
   });
@@ -64,22 +64,22 @@ Consumers should expect this and de-dupe or perform idempotent operations.
   });
 
   // You can listen channel, the message is sent to as many listeners as there are
-  mq.listen('endpoint/v1/120', (msg) => {
+  mq.listen('endpoint/v1/120', (err, msg) => {
     console.log(msg);
   });
 
   // Or consume channel, the message is sent to one consumer at a time (round-robin distribution)
-  mq.consume('endpoint/v1/120', (msg) => {
+  mq.consume('endpoint/v1/120', (err, msg, done, info) => {
     console.log(msg);
+    done(false); // requeue if false is passed
   })
 
   // You can use wildcard to listen many channels, and aknowledge
-  mq.listen('endpoint/v1/*', (err, msg, info, done) => {
+  mq.listen('endpoint/v1/*', (err, msg, info) => {
     console.log(info.endpoint);
     console.log(info.version);
     console.log(info.id);
     console.log(msg);
-    done(false); // requeue if false is passed
   });
 
   // you can also pass an object to describe the channel
@@ -92,7 +92,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
     console.log(msg);
   });
   listener.addId([], (err) => {}); // you can add id to listen at runtime
-  listener.delId([], (err) => {}); // or remove id to listen at runtime
+  listener.removeId([], (err) => {}); // or remove id to listen at runtime
 
 ```
 
@@ -108,7 +108,7 @@ The broker has a config file which defines client rights between channels
       client        : 'easilys-*',
       autoAccept    : true,                                 // auto accept new clients which match this client name
       read          : ['gateway/*', 'supplier_invoice/*'],  // the client cannot listen on *
-      write         : ['email', 'faxes']
+      write         : ['email/*', 'faxes/*']
     },
     {
       client        : 'email-service-1',
