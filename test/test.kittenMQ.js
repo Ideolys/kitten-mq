@@ -232,6 +232,46 @@ describe('kitten-mq', () => {
         });
       });
 
+      it('should set isMaster', done => {
+        let _client1 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            let _nbCalls = 0;
+
+            _client1.listen('endpoint/1.0/*', (err) => {
+              should(err).not.be.ok();
+              _nbCalls++;
+
+              _broker1.setIsMaster(false);
+              _client1.send('endpoint/1.0/test', { test : 'hello world' });
+            });
+
+            setTimeout(() => {
+              should(_nbCalls).eql(1);
+              _client1.disconnect(() => {
+                _broker1.stop(done);
+              });
+            }, 200);
+
+            setTimeout(() => {
+              _client1.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                should(err).not.ok();
+              });
+            }, 20);
+          });
+        });
+      });
+
     });
 
   });
