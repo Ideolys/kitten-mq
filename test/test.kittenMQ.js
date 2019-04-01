@@ -1950,6 +1950,368 @@ describe('kitten-mq', () => {
           });
         });
       });
+
+      it('should consume for multiple ids : multiple ids', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+
+              _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, done) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+                done();
+              });
+
+              setTimeout(() => {
+                should(_nbCallsListener1).eql(3);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should consume for multiple ids : one addId', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, done) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+                done();
+              });
+
+              _consumer.addId(4, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(4);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                _client2.send('endpoint/1.0/4', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should consume for multiple ids : multiple addId', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1] }, (err, packet, done) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+                done();
+              });
+
+              _consumer.addId(2, (err) => {
+                _nbErrors++;
+              });
+              _consumer.addId(3, (err) => {
+                _nbErrors++;
+              });
+              _consumer.addId(4, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(4);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                _client2.send('endpoint/1.0/4', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should consume for multiple ids & add do nothing if already defined id is added', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, done) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+                done();
+              });
+
+              _consumer.addId(1, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(3);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should consume for multiple ids & remove id', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, done, info) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+                done();
+              });
+
+              _consumer.removeId(3, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(2);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should consume for multiple ids & remove do nothing if id is not listened', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, done, info) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+                done();
+              });
+
+              _consumer.removeId(4, (err) => {
+                _nbErrors++;
+              });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(3);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
     });
 
     describe('send()', () => {
