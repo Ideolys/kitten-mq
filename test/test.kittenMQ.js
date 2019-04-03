@@ -734,13 +734,13 @@ describe('kitten-mq', () => {
                 _nbCalls++;
 
                 if (_nbCalls === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '1' });
                 }
                 else if (_nbCalls === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '2' });
                 }
                 else {
-                  should(info.channel).eql('endpoint/1.0/3');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '3' });
                 }
 
                 should(packet).eql({
@@ -799,13 +799,13 @@ describe('kitten-mq', () => {
                 _nbCalls++;
 
                 if (_nbCalls === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '1' });
                 }
                 else if (_nbCalls === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '2' });
                 }
                 else {
-                  should(info.channel).eql('endpoint/1.0/3');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '3' });
                 }
 
                 should(packet).eql({
@@ -816,7 +816,7 @@ describe('kitten-mq', () => {
               _client2.listen('endpoint/1.0/1', (err, packet, info) => {
                 should(err).not.ok();
                 _nbCallsClient2++;
-                should(info.channel).eql('endpoint/1.0/1');
+                should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '1' });
 
                 should(packet).eql({
                   test : 'hello world'
@@ -931,10 +931,10 @@ describe('kitten-mq', () => {
                 _nbCallsListener2++;
 
                 if (_nbCallsListener2 === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '1' });
                 }
                 else if (_nbCallsListener2 === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '2' });
                 }
 
                 should(packet).eql({
@@ -945,7 +945,7 @@ describe('kitten-mq', () => {
               _client2.listen('endpoint/1.1/3', (err, packet, info) => {
                 should(err).not.ok();
                 _nbCallsListener3++;
-                should(info.channel).eql('endpoint/1.1/3');
+                should(info.channel).eql({ endpoint : 'endpoint', version : '1.1', id : '3' });
 
                 should(packet).eql({
                   test : 'hello world'
@@ -1753,13 +1753,13 @@ describe('kitten-mq', () => {
                 _nbCalls++;
 
                 if (_nbCalls === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '1' });
                 }
                 else if (_nbCalls === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '2' });
                 }
                 else {
-                  should(info.channel).eql('endpoint/1.0/3');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '3' });
                 }
 
                 should(packet).eql({
@@ -1820,13 +1820,13 @@ describe('kitten-mq', () => {
                 _nbCalls++;
 
                 if (_nbCalls === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '1' });
                 }
                 else if (_nbCalls === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '2' });
                 }
                 else {
-                  should(info.channel).eql('endpoint/1.0/3');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '3' });
                 }
 
                 should(packet).eql({
@@ -1838,7 +1838,7 @@ describe('kitten-mq', () => {
               _client2.consume('endpoint/1.0/1', (err, packet, ack, info) => {
                 should(err).not.ok();
                 _nbCallsClient2++;
-                should(info.channel).eql('endpoint/1.0/1');
+                should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '1' });
 
                 should(packet).eql({
                   test : 'hello world'
@@ -1954,10 +1954,10 @@ describe('kitten-mq', () => {
                 _nbCallsListener2++;
 
                 if (_nbCallsListener2 === 1) {
-                  should(info.channel).eql('endpoint/1.0/1');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '1' });
                 }
                 else if (_nbCallsListener2 === 2) {
-                  should(info.channel).eql('endpoint/1.0/2');
+                  should(info.channel).eql({ endpoint : 'endpoint', version : '1.0', id : '2' });
                 }
 
                 should(packet).eql({
@@ -1969,7 +1969,7 @@ describe('kitten-mq', () => {
               _client2.consume('endpoint/1.1/3', (err, packet, ack, info) => {
                 should(err).not.ok();
                 _nbCallsListener3++;
-                should(info.channel).eql('endpoint/1.1/3');
+                should(info.channel).eql({ endpoint : 'endpoint', version : '1.1', id : '3' });
 
                 should(packet).eql({
                   test : 'hello world'
