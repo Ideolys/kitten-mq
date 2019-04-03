@@ -163,8 +163,8 @@ describe('kitten-mq', () => {
                 should(_broker1._queues['endpoint/1.0']).be.ok();
                 should(_broker2._queues['endpoint/1.0']).be.ok();
 
-                should(_broker1._queues['endpoint/1.0'].currentItem).be.ok();
-                should(_broker2._queues['endpoint/1.0'].currentItem).be.ok();
+                should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(1);
+                should(_broker2._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(1);
 
                 _client1.disconnect(() => {
                   _broker2.stop(() => {
@@ -213,6 +213,8 @@ describe('kitten-mq', () => {
               setTimeout(() => {
                 should(_broker1._queues['endpoint/1.0'].currentItem).eql(undefined);
                 should(_broker1._queues['endpoint/1.0'].currentItem).eql(undefined);
+                should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
+                should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
                 should(_nbCalls).eql(1);
 
                 _client1.disconnect(() => {
@@ -4925,9 +4927,9 @@ describe('kitten-mq', () => {
       });
     });
 
-    describe.skip('disconnection', () => {
+    describe('disconnection', () => {
 
-      it('should not crash if client_1 dies', done => {
+      it('should add message in waiting queue if no client is listening', done => {
         let _client1 = client();
         let _client2 = client();
 
@@ -4956,32 +4958,283 @@ describe('kitten-mq', () => {
                 should(packet).eql({
                   test : 'hello world'
                 });
-
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
-                  });
-                });
               });
 
               _client1.disconnect();
 
               setTimeout(() => {
-                _client1.connect({
-                  clientId      : 'client_1',
-                  keysDirectory : path.join(__dirname, 'keys'),
-                  keysName      : 'client',
-                  hosts         : [
-                    'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId + '@' + configBroker1.serviceId
-                  ]
+                should(_broker1._queues['endpoint/1.0'].queueSecondary['test']).have.lengthOf(1);
+                should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(1);
+                _client2.disconnect(() => {
+                  _broker1.stop(done);
                 });
-              }, 40);
+              }, 60);
+
+              setTimeout(() => {
+                should(_broker1._queues['endpoint/1.0'].queueSecondary).be.an.Object().eql({ _nbMessages : 0 });
+                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should send waiting messages when client is reconnecting', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _configClient1 = {
+          clientId      : 'client_1',
+          keysDirectory : path.join(__dirname, 'keys'),
+          keysName      : 'client',
+          hosts         : [
+            'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId + '@' + configBroker1.serviceId
+          ]
+        };
+
+        _broker1.start(() => {
+          _client1.connect(_configClient1, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+
+              function client1 () {
+                _client1.consume('endpoint/1.0/test', (err, packet) => {
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+
+                  should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
+                  should(_broker1._queues['endpoint/1.0'].queueSecondary['test']).eql([]);
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                });
+              }
+
+              client1();
+              _client1.disconnect();
+
+              setTimeout(() => {
+                _client1.connect(_configClient1, () => {
+                  client1();
+                });
+              }, 60);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
                   should(err).not.ok();
                 });
               }, 20);
+            });
+          });
+        });
+      });
+
+      it('should not add message in waiting queue if limit is reached', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker             = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.maxItemsInQueue = 2;
+        let _broker1                  = broker(_configBroker);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+
+              _client1.consume('endpoint/1.0/test', (err, packet) => {
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _client1.disconnect();
+
+              setTimeout(() => {
+                should(_broker1._queues['endpoint/1.0'].queueSecondary['test']).have.lengthOf(2);
+                should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(2);
+                _client2.disconnect(() => {
+                  _broker1.stop(done);
+                });
+              }, 60);
+
+              setTimeout(() => {
+                should(_broker1._queues['endpoint/1.0'].queueSecondary).be.an.Object().eql({ _nbMessages : 0 });
+                _client2.send('endpoint/1.0/test', { test : 'hello world' });
+                _client2.send('endpoint/1.0/test', { test : 'hello world 2' });
+                _client2.send('endpoint/1.0/test', { test : 'hello world 3' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should send waiting messages when client is reconnecting : different ids', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        let _configClient1 = {
+          clientId      : 'client_1',
+          keysDirectory : path.join(__dirname, 'keys'),
+          keysName      : 'client',
+          hosts         : [
+            'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId + '@' + configBroker1.serviceId
+          ]
+        };
+
+        _broker1.start(() => {
+          _client1.connect(_configClient1, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCalls = 0;
+
+              function client1 () {
+                _client1.consume('endpoint/1.0/*', (err, packet, done) => {
+                  should(err).not.ok();
+                  _nbCalls++;
+                  done();
+                });
+              }
+
+              client1();
+              _client1.disconnect();
+
+              setTimeout(() => {
+                _client1.connect(_configClient1, () => {
+                  client1();
+
+                  setTimeout(() => {
+                    should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
+                    should(_broker1._queues['endpoint/1.0'].queueSecondary['test']).eql([]);
+                    should(_broker1._queues['endpoint/1.0'].queueSecondary['1']).eql([]);
+                    should(_nbCalls).eql(2);
+
+                    _client1.disconnect(() => {
+                      _client2.disconnect(() => {
+                        _broker1.stop(done);
+                      });
+                    });
+                  }, 60);
+                });
+              }, 60);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' });
+                _client2.send('endpoint/1.0/1'   , { test : 'hello world 2' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should send waiting messages when client is reconnecting : 2 brokers', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+        let _broker2 = broker(configBroker2);
+
+        let _configClient1 = {
+          clientId      : 'client_1',
+          keysDirectory : path.join(__dirname, 'keys'),
+          keysName      : 'client',
+          hosts         : [
+            'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
+            'localhost:' + configBroker2.socketServer.port + '@' + configBroker2.serviceId,
+          ]
+        };
+
+        _broker1.start(() => {
+          _broker2.start(() => {
+            _client1.connect(_configClient1, () => {
+              _client2.connect({
+                clientId      : 'client_2',
+                keysDirectory : path.join(__dirname, 'keys'),
+                keysName      : 'client2',
+                hosts         : [
+                  'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId,
+                  'localhost:' + configBroker2.socketServer.port + '@' + configBroker2.serviceId
+                ]
+              }, () => {
+                let _nbCalls = 0;
+
+                function client1 () {
+                  _client1.consume('endpoint/1.0/*', (err, packet, done) => {
+                    should(err).not.ok();
+                    _nbCalls++;
+                    done();
+                  });
+                }
+
+                client1();
+                _client1.disconnect();
+
+                setTimeout(() => {
+                  _client1.connect(_configClient1, () => {
+                    client1();
+
+                    setTimeout(() => {
+                      should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
+                      should(_broker1._queues['endpoint/1.0'].queueSecondary['test']).eql([]);
+                      should(_broker1._queues['endpoint/1.0'].queueSecondary['1']).eql([]);
+
+                      should(_broker2._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
+                      should(_broker2._queues['endpoint/1.0'].queueSecondary['test']).eql([]);
+                      should(_broker2._queues['endpoint/1.0'].queueSecondary['1']).eql([]);
+                      should(_nbCalls).eql(2);
+
+                      _client1.disconnect(() => {
+                        _client2.disconnect(() => {
+                          _broker1.stop(() => {
+                            _broker2.stop(done);
+                          });
+                        });
+                      });
+                    }, 60);
+                  });
+                }, 60);
+
+                setTimeout(() => {
+                  _client2.send('endpoint/1.0/test', { test : 'hello world' });
+                  _client2.send('endpoint/1.0/1'   , { test : 'hello world 2' });
+                }, 20);
+              });
             });
           });
         });
