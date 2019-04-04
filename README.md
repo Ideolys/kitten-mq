@@ -140,8 +140,8 @@ The broker has a config file which defines client rights between channels
     }
   ],
 
+  // Channel descriptions
   channels : [
-    // Description des channels :
     {
       'easilys/v1' :{
         map : {
