@@ -1107,6 +1107,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               let _nbCallsListener1 = 0;
+              let _nbCallsAddId     = 0;
               let _nbErrors         = 0;
 
               let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet) => {
@@ -1118,11 +1119,16 @@ describe('kitten-mq', () => {
               });
 
               _listener.addId(4, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
+
+                _nbCallsAddId++;
               });
 
               setTimeout(() => {
                 should(_nbErrors).eql(0);
+                should(_nbCallsAddId).eql(1);
                 should(_nbCallsListener1).eql(4);
 
                 _client1.disconnect(() => {
@@ -1178,14 +1184,78 @@ describe('kitten-mq', () => {
               });
 
               _listener.addId(2, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
               _listener.addId(3, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
               _listener.addId(4, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
+
+              setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(4);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                _client2.send('endpoint/1.0/4', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should listen for multiple ids : multiple addId (Array definition)', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+
+              let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1] }, (err, packet) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _listener.addId([2, 3, 4]);
 
               setTimeout(() => {
                 should(_nbErrors).eql(0);
@@ -1244,7 +1314,9 @@ describe('kitten-mq', () => {
               });
 
               _listener.addId(1, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
 
               setTimeout(() => {
@@ -1293,6 +1365,7 @@ describe('kitten-mq', () => {
             }, () => {
               let _nbCallsListener1 = 0;
               let _nbErrors         = 0;
+              let _nbCallsRemoveId  = 0;
 
               let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, info) => {
                 _nbCallsListener1++;
@@ -1303,11 +1376,15 @@ describe('kitten-mq', () => {
               });
 
               _listener.removeId(3, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
+                _nbCallsRemoveId++;
               });
 
               setTimeout(() => {
                 should(_nbErrors).eql(0);
+                should(_nbCallsRemoveId).eql(1);
                 should(_nbCallsListener1).eql(2);
 
                 _client1.disconnect(() => {
@@ -1362,7 +1439,9 @@ describe('kitten-mq', () => {
               });
 
               _listener.removeId(4, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
 
               setTimeout(() => {
@@ -2123,6 +2202,7 @@ describe('kitten-mq', () => {
             }, () => {
               let _nbCallsListener1 = 0;
               let _nbErrors         = 0;
+              let _nbCallsAddId     = 0;
 
               let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, done) => {
                 _nbCallsListener1++;
@@ -2134,11 +2214,15 @@ describe('kitten-mq', () => {
               });
 
               _consumer.addId(4, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
+                _nbCallsAddId++;
               });
 
               setTimeout(() => {
                 should(_nbErrors).eql(0);
+                should(_nbCallsAddId).eql(1);
                 should(_nbCallsListener1).eql(4);
 
                 _client1.disconnect(() => {
@@ -2195,16 +2279,88 @@ describe('kitten-mq', () => {
               });
 
               _consumer.addId(2, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
               _consumer.addId(3, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
               _consumer.addId(4, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
 
               setTimeout(() => {
+                should(_nbErrors).eql(0);
+                should(_nbCallsListener1).eql(4);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 150);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                _client2.send('endpoint/1.0/2', { test : 'hello world' });
+                _client2.send('endpoint/1.0/3', { test : 'hello world' });
+                _client2.send('endpoint/1.0/4', { test : 'hello world' });
+              }, 20);
+            });
+          });
+        });
+      });
+
+      it('should consume for multiple ids : multiple addId (Array definition)', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbErrors         = 0;
+              let _nbCallsAddId     = 0;
+
+              let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1] }, (err, packet, done) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+                done();
+              });
+
+              _consumer.addId([2, 3, 4], (err) => {
+                if (err) {
+                  _nbErrors++;
+                }
+                _nbCallsAddId++;
+              });
+
+              setTimeout(() => {
+                should(_nbCallsAddId).eql(1);
                 should(_nbErrors).eql(0);
                 should(_nbCallsListener1).eql(4);
 
@@ -2262,7 +2418,9 @@ describe('kitten-mq', () => {
               });
 
               _consumer.addId(1, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
 
               setTimeout(() => {
@@ -2311,6 +2469,7 @@ describe('kitten-mq', () => {
             }, () => {
               let _nbCallsListener1 = 0;
               let _nbErrors         = 0;
+              let _nbCallsRemoveId  = 0;
 
               let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, done, info) => {
                 _nbCallsListener1++;
@@ -2322,11 +2481,15 @@ describe('kitten-mq', () => {
               });
 
               _consumer.removeId(3, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
+                _nbCallsRemoveId++;
               });
 
               setTimeout(() => {
                 should(_nbErrors).eql(0);
+                should(_nbCallsRemoveId).eql(1);
                 should(_nbCallsListener1).eql(2);
 
                 _client1.disconnect(() => {
@@ -2382,7 +2545,9 @@ describe('kitten-mq', () => {
               });
 
               _consumer.removeId(4, (err) => {
-                _nbErrors++;
+                if (err) {
+                  _nbErrors++;
+                }
               });
 
               setTimeout(() => {
