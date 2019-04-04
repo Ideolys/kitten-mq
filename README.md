@@ -39,7 +39,6 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
   let config = {
     hosts    : ['mybrokerurl.com:443'],      // list of brokers mirror URLs for High Avaibility
-    serverId : 'mybroker-service-1',         // broker unique id, defined on the broker side
     pubKey   : fs.readfile('kittenMQ.pub'),  // The public key of this client sent to the broker
     privKey  : fs.readfile('kittenMQ.pem'),  // The private key of the client used to generate tokens
     clientId : 'easilys-APP-KEY'             // The client id, it must be globally unique
@@ -102,13 +101,31 @@ The broker has a config file which defines client rights between channels
 
 ```javascript
 {
-  port : 8443,
-  rules : [
+  serverId              : 'mybroker-service-1',         // broker unique id, defined on the broker side
+  registeredClientsPath : 'path_to_client_public_keys_folder',
+  keysDirectory         : 'path_to_brokers_keys',
+  keysName              : 'key_name',
+  isMaster              : false, // only master is able to send messages to listeners and consumers
+
+  socketServer : {
+    port            : 1234, // server port
+    host            : 'localhost',
+    logs            : 'path_to_packet_logs_directory',
+    packetsFilename : 'broker.log', // name of the file to saved unsent packets
+    token           : null          // auth token for clients
+  },
+
+  maxItemsInQueue : 1000, // max item in queue in one queue (channel)
+  requeueLimit    : 5,    // limit of requeues for one packet
+  requeueInterval : 100   // requeue interval in seconds
+
+  // Rights
+  rules    : [
     {
       client        : 'easilys-*',
       autoAccept    : true,                                 // auto accept new clients which match this client name
       read          : ['gateway/*', 'supplier_invoice/*'],  // the client cannot listen on *
-      write         : ['email/*', 'faxes/*']
+      write         : ['email/*', 'faxes/*']                // syntax is: endpoint/version/id, endpoint/version/* or endpoint/*
     },
     {
       client        : 'email-service-1',
@@ -122,25 +139,18 @@ The broker has a config file which defines client rights between channels
       write         : ['*']
     }
   ],
-  // requeueLimit    : 5,
-  // requeueInterval : 50ms
 
-  // exclusiveGroups : {
-  //   restalliance : ['easilys-20230303', 'easilys-302020']
-  // }
-}
-
-// Description des channels :
-
-{
-  'easilys/v1' :{
-    map : {
-
-    },
-    requeueAutoWhenNoAcknowledgeAfter : 120s
-    requeueLimit    : 2                     // global, aussi bien pour les done() que les requeue auto
-    requeueInterval : 100 sec
-  }
+  channels : [
+    // Description des channels :
+    {
+      'easilys/v1' :{
+        map : {
+          id : ['int'],
+          ...
+        }
+      }
+    }
+  ]
 }
 ```
 
@@ -167,18 +177,4 @@ One tuple `endpoint/v1` defines a JSON format
 
 KittenMQ duplicates messages of a channel to as many listeners, but is there are multiple consumers for the same channel, only one
 consumer will receive the message among other
-
-
-## API Usage
-
-
-
-## Notes
-
-Chaque client envoi sur les 2 broker
-Srul l'iun des broker renvoi les message (le master), l'esclave attend les accusé de récdprion pour vider
-Les accusé de réception sont
-
-
-
 
