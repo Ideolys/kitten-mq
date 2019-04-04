@@ -14,7 +14,9 @@
   "license": "Ideolys",
   "dependencies": {
     "kitten-jwt": "^0.3.1",
-    "kitten-socket": "^1.2.5",
+    "kitten-socket": "^1.2.5"
+  },
+  "dev-dependencies": {
     "mocha": "^6.0.2",
     "should": "^13.2.3"
   }
