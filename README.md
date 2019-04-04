@@ -38,10 +38,10 @@ Consumers should expect this and de-dupe or perform idempotent operations.
   let kittenMQ = require('kitten-mq');
 
   let config = {
-    hosts    : ['mybrokerurl.com:443'],      // list of brokers mirror URLs for High Avaibility
-    pubKey   : fs.readfile('kittenMQ.pub'),  // The public key of this client sent to the broker
-    privKey  : fs.readfile('kittenMQ.pem'),  // The private key of the client used to generate tokens
-    clientId : 'easilys-APP-KEY'             // The client id, it must be globally unique
+    hosts         : ['mybrokerurl.com:443@serviceId'], // list of brokers mirror URLs for High Avaibility
+    clientId      : 'easilys-APP-KEY'                  // The client id, it must be globally unique
+    keysDirectory : 'path_to_keys_directory',
+    keysName      : 'key_name',
   };
 
   // When the client connects for the first time, it pushes the public key on the broker
