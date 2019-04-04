@@ -409,7 +409,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('*', (err) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
+                should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
 
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
@@ -452,12 +452,12 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('endpoint/1.0/1', (err) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
+                should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
               });
 
               setTimeout(() => {
                 _client2.send('*', { test : 'hello world' }, (err) => {
-                  should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
+                  should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
 
                   _client1.disconnect(() => {
                     _client2.disconnect(() => {
@@ -870,7 +870,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('endpoint/*', (err, packet, info) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
+                should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
                 _nbCalls++;
               });
 
@@ -922,7 +922,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.listen('endpoint/*', (err, packet, info) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
+                should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
                 _nbCallsListener1++;
               });
 
@@ -1464,7 +1464,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.consume('*', (err) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
+                should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
 
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
@@ -1893,7 +1893,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.consume('endpoint/*', (err, packet, ack, info) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL)
+                should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL })
                 _nbCalls++;
               });
 
@@ -1945,7 +1945,7 @@ describe('kitten-mq', () => {
               ]
             }, () => {
               _client1.consume('endpoint/*', (err, packet, ack, info) => {
-                should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
+                should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
                 _nbCallsListener1++;
               });
 
@@ -2434,7 +2434,7 @@ describe('kitten-mq', () => {
             }, () => {
               setTimeout(() => {
                 _client2.send('endpoint/*', { test : 'hello world' }, (err) => {
-                  should(err).eql(constants.ERRORS.BAD_ENPOINT_ALL);
+                  should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
                   _client1.disconnect(() => {
                     _client2.disconnect(() => {
                       _broker1.stop(done);
@@ -2472,7 +2472,7 @@ describe('kitten-mq', () => {
             }, () => {
               setTimeout(() => {
                 _client2.send({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, { test : 'hello world' }, (err) => {
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                   _client1.disconnect(() => {
                     _client2.disconnect(() => {
                       _broker1.stop(done);
@@ -2918,7 +2918,271 @@ describe('kitten-mq', () => {
         });
       });
 
+    });
 
+    describe('format', () => {
+
+      it('should not send to listener if bad format', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.channels = {
+          'endpoint/1.0' : {
+            map : {
+              id    : ['int'],
+              label : ['string']
+            }
+          }
+        }
+        let _broker1 = broker(_configBroker);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCalls = 0;
+              _client1.listen('endpoint/1.0/*', (err) => {
+                _nbCalls++;
+              });
+
+              let _nbErrors = 0;
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                  should(err.message).eql(constants.ERRORS.BAD_FORMAT);
+                  should(err.error).be.an.Array().and.have.lengthOf(2);
+                  _nbErrors++;
+                });
+              }, 20);
+
+              setTimeout(() => {
+                should(_nbCalls).eql(0);
+                should(_nbErrors).eql(1);
+
+                _client2.disconnect(() => {
+                  _client1.disconnect(() => {
+                    _broker1.stop(done);
+                  })
+                });
+              }, 60);
+            });
+          });
+        });
+      });
+
+      it('should send to listener if correct format', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.channels = {
+          'endpoint/1.0' : {
+            map : {
+              id    : ['int'],
+              label : ['string']
+            }
+          }
+        }
+        let _broker1 = broker(_configBroker);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCalls = 0;
+              _client1.listen('endpoint/1.0/*', (err, msg) => {
+                _nbCalls++;
+                should(msg).eql({
+                  id    : 1,
+                  label : 'SpaceX'
+                });
+              });
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/*', { id : 1, label : 'SpaceX' }, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
+
+              setTimeout(() => {
+                should(_nbCalls).eql(1);
+
+                _client2.disconnect(() => {
+                  _client1.disconnect(() => {
+                    _broker1.stop(done);
+                  })
+                });
+              }, 60);
+            });
+          });
+        });
+      });
+
+      it('should send to listener if correct format : sub array', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.channels = {
+          'endpoint/1.0' : {
+            map : {
+              id       : ['int'],
+              label    : ['string'],
+              products : ['array', {
+                id    : ['int'],
+                label : ['string']
+              }]
+            }
+          }
+        }
+        let _broker1 = broker(_configBroker);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCalls      = 0;
+              let _expectedData = {
+                id : 1,
+                label : 'SpaceX',
+                products : [
+                  { id : 1, label : 'BFR'      },
+                  { id : 2, label : 'Falcon 9' },
+                ]
+              };
+              _client1.listen('endpoint/1.0/*', (err, msg) => {
+                _nbCalls++;
+                should(msg).eql(_expectedData);
+              });
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/*', _expectedData, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
+
+              setTimeout(() => {
+                should(_nbCalls).eql(1);
+
+                _client2.disconnect(() => {
+                  _client1.disconnect(() => {
+                    _broker1.stop(done);
+                  })
+                });
+              }, 60);
+            });
+          });
+        });
+      });
+
+      it('should send to listener if correct format : sub object', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.channels = {
+          'endpoint/1.0' : {
+            map : {
+              id      : ['int'],
+              label   : ['string'],
+              company : ['object', {
+                id    : ['int'],
+                label : ['string']
+              }]
+            }
+          }
+        }
+        let _broker1 = broker(_configBroker);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCalls      = 0;
+              let _expectedData = {
+                id      : 1,
+                label   : 'Falcon 9',
+                company : {
+                  id    : 1,
+                  label : 'SpaceX'
+                }
+              };
+              _client1.listen('endpoint/1.0/*', (err, msg) => {
+                _nbCalls++;
+                should(msg).eql(_expectedData);
+              });
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/*', _expectedData, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
+
+              setTimeout(() => {
+                should(_nbCalls).eql(1);
+
+                _client2.disconnect(() => {
+                  _client1.disconnect(() => {
+                    _broker1.stop(done);
+                  })
+                });
+              }, 60);
+            });
+          });
+        });
+      });
     });
 
     describe('rules', () => {
@@ -2969,7 +3233,7 @@ describe('kitten-mq', () => {
                 });
 
                 _client1.listen('endpoint/1.0/2', (err, packet) => {
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                   _isErrorHasBeenCalled = true;
                 });
 
@@ -3112,7 +3376,7 @@ describe('kitten-mq', () => {
 
                 _client1.listen('endpoint/1.1/2', (err, packet) => {
                   _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                 });
 
                 _client2.listen('endpoint/1.0/1', (err, packet, info) => {
@@ -3181,7 +3445,7 @@ describe('kitten-mq', () => {
 
                 _client1.listen('endpoint/1.1/*', (err, packet) => {
                   _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                 });
 
                 _client2.listen('endpoint/1.0/*', (err, packet, info) => {
@@ -3251,7 +3515,7 @@ describe('kitten-mq', () => {
 
                 _client1.listen('endpoint_2/1.0/1', (err, packet) => {
                   _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                 });
 
                 _client2.listen('endpoint/1.0/1', (err, packet, info) => {
@@ -3321,7 +3585,7 @@ describe('kitten-mq', () => {
 
                 _client1.listen('endpoint_2/1.0/*', (err, packet) => {
                   _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                 });
 
                 _client2.listen('endpoint/1.0/*', (err, packet, info) => {
@@ -3393,7 +3657,7 @@ describe('kitten-mq', () => {
                 });
 
                 _client1.listen('endpoint/1.0/2', (err, packet) => {
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                   _isErrorHasBeenCalled = true;
                 });
 
@@ -3465,7 +3729,7 @@ describe('kitten-mq', () => {
 
                 _client1.listen('endpoint/1.1/2', (err, packet) => {
                   _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                 });
 
                 _client2.listen('endpoint/1.0/1', (err, packet, info) => {
@@ -3534,7 +3798,7 @@ describe('kitten-mq', () => {
 
                 _client1.listen('endpoint/1.1/*', (err, packet) => {
                   _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                 });
 
                 _client2.listen('endpoint/1.0/*', (err, packet, info) => {
@@ -3604,7 +3868,7 @@ describe('kitten-mq', () => {
 
                 _client1.listen('endpoint_2/1.0/1', (err, packet) => {
                   _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                 });
 
                 _client2.listen('endpoint/1.0/1', (err, packet, info) => {
@@ -3674,7 +3938,7 @@ describe('kitten-mq', () => {
 
                 _client1.listen('endpoint_2/1.0/*', (err, packet) => {
                   _isErrorHasBeenCalled = true;
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                 });
 
                 _client2.listen('endpoint/1.0/*', (err, packet, info) => {
@@ -3747,7 +4011,7 @@ describe('kitten-mq', () => {
                 });
 
                 _client2.listen('endpoint/1.0/1', (err, packet) => {
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                   _nbErrors++;
                 });
 
@@ -3827,7 +4091,7 @@ describe('kitten-mq', () => {
                 });
 
                 _client2.listen('endpoint/1.0/1', (err, packet) => {
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                   _nbErrors++;
                 });
 
@@ -3841,7 +4105,7 @@ describe('kitten-mq', () => {
                 });
 
                 _client2.listen('endpoint/1.0/3', (err, packet) => {
-                  should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                   _nbErrors++;
                 });
 
@@ -3989,7 +4253,7 @@ describe('kitten-mq', () => {
 
                 setTimeout(() => {
                   _client1.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _isErrorHasBeenCalled = true;
                   });
 
@@ -4075,7 +4339,7 @@ describe('kitten-mq', () => {
                   });
 
                   _client1.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
@@ -4156,7 +4420,7 @@ describe('kitten-mq', () => {
                   });
 
                   _client1.send('endpoint_2/1.1/1', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
@@ -4227,7 +4491,7 @@ describe('kitten-mq', () => {
 
                 setTimeout(() => {
                   _client1.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _isErrorHasBeenCalled = true;
                   });
 
@@ -4303,7 +4567,7 @@ describe('kitten-mq', () => {
 
                 setTimeout(() => {
                   _client1.send('endpoint/1.1/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _isErrorHasBeenCalled = true;
                   });
 
@@ -4386,7 +4650,7 @@ describe('kitten-mq', () => {
 
                 setTimeout(() => {
                   _client1.send('endpoint_2/1.1/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _isErrorHasBeenCalled = true;
                   });
 
@@ -4462,12 +4726,12 @@ describe('kitten-mq', () => {
 
                 setTimeout(() => {
                   _client1.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
                   _client2.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
@@ -4553,12 +4817,12 @@ describe('kitten-mq', () => {
                   });
 
                   _client1.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
                   _client2.send('endpoint/1.1/1', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
@@ -4646,12 +4910,12 @@ describe('kitten-mq', () => {
                   });
 
                   _client1.send('endpoint_2/1.1/1', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
                   _client2.send('endpoint_2/1.1/1', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
@@ -4722,12 +4986,12 @@ describe('kitten-mq', () => {
 
                 setTimeout(() => {
                   _client1.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
                   _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
@@ -4803,11 +5067,11 @@ describe('kitten-mq', () => {
 
                 setTimeout(() => {
                   _client1.send('endpoint/1.1/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
                   _client2.send('endpoint/1.1/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
@@ -4890,11 +5154,11 @@ describe('kitten-mq', () => {
 
                 setTimeout(() => {
                   _client1.send('endpoint_2/1.1/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
                   _client2.send('endpoint_2/1.1/*', { test : 'hello world' }, (err) => {
-                    should(err).eql(constants.ERRORS.NOT_ALLOWED);
+                    should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
                     _nbErrors++;
                   });
 
@@ -5235,6 +5499,198 @@ describe('kitten-mq', () => {
                   _client2.send('endpoint/1.0/1'   , { test : 'hello world 2' });
                 }, 20);
               });
+            });
+          });
+        });
+      });
+
+    });
+
+    describe('reload', () => {
+
+      it('should reload channel formats', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.channels = {
+          'endpoint/1.0' : {
+            map : {
+              id    : ['int'],
+              label : ['string']
+            }
+          }
+        };
+        let _broker1 = broker(_configBroker);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCalls = 0;
+              _client1.listen('endpoint/1.0/*', (err) => {
+                _nbCalls++;
+              });
+
+              let _nbErrors = 0;
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                  should(err.message).eql(constants.ERRORS.BAD_FORMAT);
+                  should(err.error).be.an.Array().and.have.lengthOf(2);
+                  _nbErrors++;
+                });
+              }, 20);
+
+              setTimeout(() => {
+                should(_nbCalls).eql(0);
+                should(_nbErrors).eql(1);
+
+                _configBroker.channels = {
+                  'endpoint/1.0' : {
+                    map : {
+                      test : ['string']
+                    }
+                  }
+                };
+                _broker1.reload(_configBroker);
+
+                _client2.send('endpoint/1.0/*', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_nbCalls).eql(1);
+
+                  _client2.disconnect(() => {
+                    _client1.disconnect(() => {
+                      _broker1.stop(done);
+                    })
+                  });
+                }, 40);
+              }, 60);
+            });
+          });
+        });
+      });
+
+      it('should reload rules', done => {
+        let _configBroker = JSON.parse(JSON.stringify(configBroker1));
+        _configBroker.rules = [
+          {
+            client : 'client_1',
+            read   : ['endpoint/1.0/1']
+          }
+        ];
+
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(_configBroker);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + configBroker1.socketServer.port + '@' + configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCallsListener1 = 0;
+              let _nbCallsListener2 = 0;
+
+              _client1.listen('endpoint/1.0/1', (err, packet) => {
+                _nbCallsListener1++;
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
+              _client1.listen('endpoint/1.0/2', (err, packet) => {
+                _nbCallsListener2++;
+
+                if (_nbCallsListener2 === 1) {
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
+                }
+              });
+
+              _client2.listen('endpoint/1.0/1', (err, packet) => {
+                _isListenClient2HasBeenCalled = true;
+                should(err).not.ok();
+              });
+
+              setTimeout(() => {
+                should(_nbCallsListener1).eql(1);
+                should(_nbCallsListener2).eql(1);
+
+                let _nbCallsListener3 = 0;
+                let _nbCallsListener4 = 0;
+
+                _configBroker.rules = [
+                  {
+                    client : 'client_1',
+                    read   : ['endpoint/1.0/2']
+                  }
+                ];
+
+                _broker1.reload(_configBroker);
+
+                _client1.listen('endpoint/1.0/1', (err, packet) => {
+                  _nbCallsListener3++;
+                  should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
+                });
+
+                _client1.listen('endpoint/1.0/2', (err, packet) => {
+                  _nbCallsListener4++;
+                  should(err).not.ok();
+                  should(packet).eql({
+                    test : 'hello world'
+                  });
+                });
+
+                _client2.send('endpoint/1.0/2', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+
+                setTimeout(() => {
+                  should(_nbCallsListener3).eql(1);
+                  should(_nbCallsListener4).eql(1);
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }, 60);
+              }, 100);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
             });
           });
         });
