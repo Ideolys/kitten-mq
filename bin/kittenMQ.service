@@ -5,6 +5,7 @@ After=network.target
 [Service]
 User=@user
 ExecStart=/usr/local/bin/kitten-mq start
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
