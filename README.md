@@ -178,3 +178,17 @@ One tuple `endpoint/v1` defines a JSON format
 KittenMQ duplicates messages of a channel to as many listeners, but is there are multiple consumers for the same channel, only one
 consumer will receive the message among other
 
+## Broker installation
+
+```bash
+  npm install -g kitten-mq
+  sudo systemctl daemon-reload
+  sudo systemctl enable kitten-mq
+  sudo systemctl start kitten-mq
+```
+
+The broker create a directory in `/home/<user>/kitten-mq` and its config file in `/home/<user>/kitten-mq/kitten-mq.config.json`.
+
+### Reload the broker configuration
+
+To reload the broker configuration: `kitten-mq reload`.

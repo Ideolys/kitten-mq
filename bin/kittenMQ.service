@@ -1,0 +1,10 @@
+[Unit]
+Description=Kitten-mq
+After=network.target
+
+[Service]
+User=@user
+ExecStart=/usr/local/bin/kitten-mq start
+
+[Install]
+WantedBy=multi-user.target

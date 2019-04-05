@@ -48,3 +48,4 @@ packets/
 test/keys/
 test/clients/
 test/clients_2/
+test/config*
