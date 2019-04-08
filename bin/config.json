@@ -8,7 +8,7 @@
   "socketServer"          : {
     "port"            : 1234,
     "host"            : "localhost",
-    "logs"            : "packets",
+    "logs"            : "/var/www/kitten-mq/packets",
     "packetsFilename" : "broker.log",
     "token"           : null
   },
