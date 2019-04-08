@@ -10,8 +10,8 @@ sudo sed -i -e "s/@exec/${escaped}/g" /etc/systemd/system/kitten-mq.service
 
 sudo adduser kitten-mq
 mkdir /var/www/kitten-mq
-cp "$script_location/config.json" /var/www/kitten-mq/kitten-mq.config.json
-sudo chown kitten-mq:kitten-mq /var/www/kitten-mq
+sudo cp "$script_location/config.json" /var/www/kitten-mq/kitten-mq.config.json
+sudo chown -R kitten-mq:kitten-mq /var/www/kitten-mq
 
 sudo systemctl daemon-reload
 sudo systemctl enable kitten-mq
