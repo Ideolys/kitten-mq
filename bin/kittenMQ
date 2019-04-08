@@ -3,15 +3,16 @@ const { exec } = require('child_process');
 const broker   = require('../lib/broker/index');
 const path     = require('path')
 const fs       = require('fs');
-const homedir  = require('os').homedir();
 
-const install = require('./kittenMQ-sytemd');
-const pidPath = path.join(homedir, 'kitten-mq', 'pid');
+const install          = require('./kittenMQ-sytemd');
+const projectDirectory = path.join('/var', 'www', 'kitten-mq');
+const pidPath          = path.join(projectDirectory, 'pid');
 
 const DEFAULT_CONFIG = {
   serviceId             : 'broker-1',
-  registeredClientsPath : path.join(homedir, 'kitten-mq', 'clients'),
-  keysDirectory         : path.join(homedir, 'kitten-mq', 'keys'),
+  registeredClientsPath : path.join(projectDirectory, 'clients'),
+  keysDirectory         : path.join(projectDirectory, 'keys'),
+  logsDirectory         : path.join(projectDirectory, 'logs'),
   keysName              : 'broker',
   isMaster              : false,
   socketServer          : {
@@ -47,21 +48,20 @@ if (_commands.indexOf(_args[0]) === 0) {
   return install();
 }
 
-const _configPath = path.join(homedir, 'kitten-mq', 'kitten-mq.config.json');
+const _configPath = path.join(projectDirectory, 'kitten-mq.config.json');
 if (_commands.indexOf(_args[0]) === 1) {
   /**
    * Create working directory and config file if not exist
    * @param {Function} callback
    */
   function checkWorkingDirectory (callback) {
-    const pathLogs = path.join(homedir, 'kitten-mq');
-    fs.access(pathLogs, fs.constants.F_OK, err => {
+    fs.access(projectDirectory, fs.constants.F_OK, err => {
       if (!err) {
         return callback();
       }
 
-      fs.mkdirSync(pathLogs);
-      console.log('Directory ' + pathLogs + ' created!');
+      fs.mkdirSync(projectDirectory);
+      console.log('Directory ' + projectDirectory + ' created!');
       fs.writeFileSync(_configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
       console.log('File ' + _configPath + ' created!');
       callback();
@@ -69,7 +69,7 @@ if (_commands.indexOf(_args[0]) === 1) {
   }
 
   return checkWorkingDirectory(() => {
-    let _broker = broker(_configPath);
+    let _broker = broker(_configPath, true);
     _broker.start(() => {
       fs.writeFileSync(pidPath, process.pid);
     });

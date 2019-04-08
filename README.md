@@ -187,7 +187,7 @@ consumer will receive the message among other
   sudo systemctl start kitten-mq
 ```
 
-The broker create a directory in `/home/<user>/kitten-mq` and its config file in `/home/<user>/kitten-mq/kitten-mq.config.json`.
+The broker create a directory in `/var/www/kitten-mq` and its config file in `/var/www/kitten-mq/kitten-mq.config.json`.
 
 ### Reload the broker configuration
 
