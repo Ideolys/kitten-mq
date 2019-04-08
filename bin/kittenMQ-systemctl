@@ -4,7 +4,7 @@ script_location="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fileConfigLocation="$script_location/kittenMQ.service"
 
 sudo cp $fileConfigLocation /etc/systemd/system/kitten-mq.service
-exec_kitten_mq="$(which kitten-mq) start"
+exec_kitten_mq=$(which kitten-mq)
 escaped="${exec_kitten_mq//\//\\/}"
 sudo sed -i -e "s/@exec/${escaped}/g" /etc/systemd/system/kitten-mq.service
 
