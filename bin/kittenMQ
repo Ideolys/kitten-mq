@@ -4,37 +4,16 @@ const broker   = require('../lib/broker/index');
 const path     = require('path')
 const fs       = require('fs');
 
-const install          = require('./kittenMQ-sytemd');
 const projectDirectory = path.join('/var', 'www', 'kitten-mq');
 const pidPath          = path.join(projectDirectory, 'pid');
 
-const DEFAULT_CONFIG = {
-  serviceId             : 'broker-1',
-  registeredClientsPath : path.join(projectDirectory, 'clients'),
-  keysDirectory         : path.join(projectDirectory, 'keys'),
-  logsDirectory         : path.join(projectDirectory, 'logs'),
-  keysName              : 'broker',
-  isMaster              : false,
-  socketServer          : {
-    port            : 1234,
-    host            : 'localhost',
-    logs            : 'packets',
-    packetsFilename : 'broker.log',
-    token           : null
-  },
-  maxItemsInQueue : 1000,
-  requeueLimit    : 5,
-  requeueInterval : 100 // seconds
-};
-
 let _args     = process.argv.slice(2);
-let _commands = ['install', 'start', 'reload'];
+let _commands = ['start', 'reload'];
 
 function printUsage () {
   console.log('kitten-mq broker')
   console.log('===============================================');
   console.group('Commands');
-  console.log('install', '\t', 'Install the broker in systemd'  );
   console.log('start'  , '\t', 'Start the broker'               );
   console.log('reload' , '\t', 'Reload the broker configuration');
   console.groupEnd('Commands');
@@ -44,43 +23,19 @@ if (_commands.indexOf(_args[0]) === -1) {
   return printUsage();
 }
 
-if (_commands.indexOf(_args[0]) === 0) {
-  return install();
-}
-
 const _configPath = path.join(projectDirectory, 'kitten-mq.config.json');
-if (_commands.indexOf(_args[0]) === 1) {
-  /**
-   * Create working directory and config file if not exist
-   * @param {Function} callback
-   */
-  function checkWorkingDirectory (callback) {
-    fs.access(projectDirectory, fs.constants.F_OK, err => {
-      if (!err) {
-        return callback();
-      }
+if (_commands.indexOf(_args[0]) === 0) {
+  let _broker = broker(_configPath, true);
+  _broker.start(() => {
+    fs.writeFileSync(pidPath, process.pid);
+  });
 
-      fs.mkdirSync(projectDirectory);
-      console.log('Directory ' + projectDirectory + ' created!');
-      fs.writeFileSync(_configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
-      console.log('File ' + _configPath + ' created!');
-      callback();
-    });
-  }
-
-  return checkWorkingDirectory(() => {
-    let _broker = broker(_configPath, true);
-    _broker.start(() => {
-      fs.writeFileSync(pidPath, process.pid);
-    });
-
-    process.on('SIGUSR2', () => {
-      _broker.reload();
-    });
+  process.on('SIGUSR2', () => {
+    _broker.reload();
   });
 }
 
-if (_commands.indexOf(_args[0]) === 2) {
+if (_commands.indexOf(_args[0]) === 1) {
   return fs.stat(pidPath, err => {
     if (err) {
       return;

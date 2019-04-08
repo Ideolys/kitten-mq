@@ -1,0 +1,18 @@
+{
+  "serviceId"             : "broker-1",
+  "registeredClientsPath" : "/var/www/kitten-mq/clients",
+  "keysDirectory"         : "/var/www/kitten-mq/keys",
+  "logsDirectory"         : "/var/www/kitten-mq/logs",
+  "keysName"              : "broker",
+  "isMaster"              : false,
+  "socketServer"          : {
+    "port"            : 1234,
+    "host"            : "localhost",
+    "logs"            : "packets",
+    "packetsFilename" : "broker.log",
+    "token"           : null
+  },
+  "maxItemsInQueue" : 1000,
+  "requeueLimit"    : 5,
+  "requeueInterval" : 100
+}

@@ -3,7 +3,7 @@ Description=Kitten-mq
 After=network.target
 
 [Service]
-User=@user
+User=kitten-mq
 ExecStart=/usr/local/bin/kitten-mq start
 Restart=always
 
