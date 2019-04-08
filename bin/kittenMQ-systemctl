@@ -4,6 +4,9 @@ script_location="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fileConfigLocation="$script_location/kittenMQ.service"
 
 sudo cp $fileConfigLocation /etc/systemd/system/kitten-mq.service
+exec_kitten_mq="$(which kitten-mq) start"
+escaped="${exec_kitten_mq//\//\\/}"
+sudo sed -i -e "s/@exec/${escaped}/g" /etc/systemd/system/kitten-mq.service
 
 sudo adduser kitten-mq
 mkdir /var/www/kitten-mq
@@ -13,4 +16,3 @@ sudo chown kitten-mq:kitten-mq /var/www/kitten-mq
 sudo systemctl daemon-reload
 sudo systemctl enable kitten-mq
 sudo systemctl start kitten-mq
-

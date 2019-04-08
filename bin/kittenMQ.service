@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 User=kitten-mq
-ExecStart=/usr/local/bin/kitten-mq start
+ExecStart=@exec
 Restart=always
 
 [Install]
