@@ -181,10 +181,8 @@ consumer will receive the message among other
 ## Broker installation
 
 ```bash
-  npm install -g kitten-mq
-  sudo systemctl daemon-reload
-  sudo systemctl enable kitten-mq
-  sudo systemctl start kitten-mq
+  sudo npm install -g kitten-mq
+  sudo $(npm root -g)/kitten-mq/bin/kittenMQ-systemctl
 ```
 
 The broker create a directory in `/var/www/kitten-mq` and its config file in `/var/www/kitten-mq/kitten-mq.config.json`.
