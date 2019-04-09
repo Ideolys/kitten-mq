@@ -38,7 +38,10 @@ Consumers should expect this and de-dupe or perform idempotent operations.
   let kittenMQ = require('kitten-mq');
 
   let config = {
-    hosts         : ['mybrokerurl.com:443@serviceId'], // list of brokers mirror URLs for High Avaibility
+    hosts         : [
+      'mybrokerurl.com:443@serviceId' // list of brokers mirror URLs for High Avaibility
+      // <url|ip>:<port>@<serviceId>#<token>
+    ],
     clientId      : 'easilys-APP-KEY'                  // The client id, it must be globally unique
     keysDirectory : 'path_to_keys_directory',
     keysName      : 'key_name',

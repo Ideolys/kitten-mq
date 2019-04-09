@@ -37,6 +37,7 @@ let configBrokerRedeliver1 = path.join(__dirname, 'config-broker-redeliver-1.jso
 let configBrokerRedeliver2 = path.join(__dirname, 'config-broker-redeliver-2.json');
 let configBrokerFormat     = path.join(__dirname, 'config-broker-format.json');
 let configBrokerRule       = path.join(__dirname, 'config-broker-rule.json');
+let configBrokerToken      = path.join(__dirname, 'config-broker-token.json');
 
 describe('kitten-mq', () => {
 
@@ -324,6 +325,60 @@ describe('kitten-mq', () => {
               });
             });
           });
+        });
+      });
+
+      it('should connect to hosts with correct token', done => {
+        let _client = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(_configBroker1));
+        _configBroker.socketServer.token = '0f1fe85a-b75b-45a9-8518-20b9b7d02edb';
+        fs.writeFileSync(configBrokerToken, JSON.stringify(_configBroker));
+
+        let _broker1 = broker(configBrokerToken);
+
+        _broker1.start(() => {
+          _client.connect({
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker.socketServer.port + '@' + _configBroker.serviceId + '#' + _configBroker.socketServer.token
+            ]
+          }, () => {
+            _client.disconnect(() => {
+              _broker1.stop(done);
+            });
+          });
+        });
+      });
+
+      it('should not connect to hosts with incorrect token', done => {
+        let _client = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(_configBroker1));
+        _configBroker.socketServer.token = '0f1fe85a-b75b-45a9-8518-20b9b7d02edb';
+        fs.writeFileSync(configBrokerToken, JSON.stringify(_configBroker));
+
+        let _broker1 = broker(configBrokerToken);
+        let _hasBeenCalled = false;
+
+        _broker1.start(() => {
+          _client.connect({
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker.socketServer.port + '@' + _configBroker.serviceId + '#1700f5e0-400e-49a7-9fee-4a61324f2ef4'
+            ]
+          }, () => {
+            _hasBeenCalled = true;
+          });
+
+          setTimeout(() => {
+            should(_hasBeenCalled).eql(false);
+            _client.disconnect(() => {
+              _broker1.stop(done);
+            });
+          }, 500);
         });
       });
 
@@ -4476,7 +4531,7 @@ describe('kitten-mq', () => {
                       _broker1.stop(done);
                     });
                   });
-                }, 100);
+                }, 150);
               });
             });
           });
@@ -5148,7 +5203,7 @@ describe('kitten-mq', () => {
                       _broker1.stop(done);
                     });
                   });
-                }, 200);
+                }, 250);
               });
             });
           });
@@ -5313,7 +5368,7 @@ describe('kitten-mq', () => {
                       _broker1.stop(done);
                     });
                   });
-                }, 100);
+                }, 150);
               });
             });
           });
@@ -5916,7 +5971,7 @@ describe('kitten-mq', () => {
                     });
                   });
                 }, 60);
-              }, 100);
+              }, 150);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
