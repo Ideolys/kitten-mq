@@ -49,7 +49,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
   // When the client connects for the first time, it pushes the public key on the broker
   // Then, the broker will accept connections for this client only if tokens are generated with the same pub/priv key
-  let mq = kittenMQ.client.connect(config, (err) => {
+  let mq = kittenMQ.client().connect(config, (err) => {
     // if connect failed, it retries automatically and it calls this callback for each retry
     console.log(err);
   });
