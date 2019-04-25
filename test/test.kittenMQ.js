@@ -5467,6 +5467,61 @@ describe('kitten-mq', () => {
 
     describe('disconnection', () => {
 
+      it('should connect/disconnect then connect same client', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configClient = {
+          clientId      : 'client_1',
+          keysDirectory : path.join(__dirname, 'keys'),
+          keysName      : 'client',
+          hosts         : [
+            'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId + '@' + configBroker1.serviceId
+          ]
+        };
+
+        let _broker1 = broker(configBroker1);
+
+        let _nbDisconnections = 0;
+
+        let _register = () => {
+          _client1.connect(_configClient, () => {
+            _client2.connect(_configClient, () => {
+
+              _client2.listen('endpoint/1.0/test', (err, packet) => {});
+
+              _client1.listen('endpoint/1.0/test', (err, packet) => {
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+
+                    _nbDisconnections++;
+
+                    if (_nbDisconnections > 1) {
+                      return _broker1.stop(done);
+                    }
+
+                    _register();
+                  });
+                })
+              });
+
+              setTimeout(() => {
+                _client1.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+              }, 40);
+            });
+          });
+        }
+
+        _broker1.start(_register);
+      });
+
       it('should add message in waiting queue if no client is listening', done => {
         let _client1 = client();
         let _client2 = client();
