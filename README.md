@@ -29,7 +29,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
 ## Getting started
 
-1) Install a broker: the server which manages queues
+1) Install a broker: the server which manages queues with a configuration below
 
 
 2) Use it
@@ -100,24 +100,25 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
 ```
 
-## Right Management
+## Broker configuration
 
-The broker has a config file which defines client rights between channels
+The broker must have a config file which defines client rights between channels
 
 ```javascript
 {
   serverId              : 'mybroker-service-1',         // broker unique id, defined on the broker side
-  registeredClientsPath : 'path_to_client_public_keys_folder',
-  keysDirectory         : 'path_to_brokers_keys',
-  keysName              : 'key_name',
-  isMaster              : false, // only master is able to send messages to listeners and consumers
+  registeredClientsPath : '/var/www/kitten-mq/clients',
+  keysDirectory         : '/var/www/kitten-mq/keys',
+  keysName              : '/var/www/kitten-mq/logs',
+  isMaster              : true, // Only the Master is send messages to listeners and consumers
+                                // Slaves receive messages and aknowledges (copy of master).
 
   socketServer : {
     port            : 1234, // server port
     host            : 'localhost',
-    logs            : 'path_to_packet_logs_directory',
+    logs            : '/var/www/kitten-mq/packets',
     packetsFilename : 'broker.log', // name of the file to saved unsent packets
-    token           : null          // auth token for clients
+    token           : null          // auth token for clients. Example: aaaaaaa-bbbb-bbbb-bbbb-bbbbccccccc
   },
 
   maxItemsInQueue : 1000, // max item in queue in one queue (channel)
