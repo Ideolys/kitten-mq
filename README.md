@@ -129,9 +129,12 @@ The broker must have a config file which defines client rights between channels
   rules    : [
     {
       client        : 'easilys-*',
-      autoAccept    : true,                                 // auto accept new clients which match this client name
-      read          : ['gateway/*', 'supplier_invoice/*'],  // the client cannot listen on *
-      write         : ['email/*', 'faxes/*']                // syntax is: endpoint/version/id, endpoint/version/* or endpoint/*
+      autoAccept    : true,                                // auto accept new clients which match this client name (only easilys is concerned)
+      read          : ['!invoice/*', 'public_message/*'],  // syntax is: endpoint/version/id, endpoint/version/* or endpoint/*
+                                                           // "!" means the client cannot listen on *. It must listen on a specific channel name
+                                                           // for example "invoice/v1/my-supplier-id-my-ref". Then this channel is "reserved" for this client
+                                                           // exclusively. Other clients cannot listen to the same channel
+      write         : ['email/*', 'faxes/*']               
     },
     {
       client        : 'email-service-1',
