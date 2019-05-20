@@ -158,17 +158,16 @@ The broker must have a config file which defines client rights between channels
   rules    : [
     {
       client        : 'easilys-*',                         // if * is used, it auto accepts new clients which match this client name (only easilys is concerned)
-      autoAccept    : true,                                // 
-      read          : ['!invoice/*', 'public_message/*'],  // syntax is: endpoint/version/id, endpoint/version/* or endpoint/*
-                                                           // "!" means the client cannot listen on *. It must listen on a specific channel name
+      read          : ['!invoice/*', 'public_message/*'],  // Syntax allowed are: "endpoint/version/id", "endpoint/version/*" or "endpoint/*"
+                                                           // "!" means the client cannot listen on *. It must listen on a specific channel id
                                                            // for example "invoice/v1/my-supplier-id-my-ref". Then this channel is "reserved" for this client
-                                                           // exclusively. Other clients cannot listen to the same channel
+                                                           // exclusively. Other clients cannot listen to the same channel.
       write         : ['email/*', 'faxes/*']               
     },
     {
-      client        : 'email-service-1',                   // the first client which connects with this name reserve the connection forever. (pub/priv key associated)
-                                                           // then, a client with the same name can connect only if  it has the same pub/priv key
-      read          : ['email/*'],
+      client        : 'email-service-1',                   // the first client that connects with this name reserve the connection forever (pub/priv key associated).
+                                                           // Then, a client with the same name can connect only if it has the same pub/priv key
+      read          : ['email/*'],                   
       write         : ['invoice/*']
     }
   ],
