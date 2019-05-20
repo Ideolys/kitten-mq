@@ -7,9 +7,10 @@ Easy to learn, Secure, Business-ready, Resilient & Fast Message Queue system
 Most of systems (Kafka, RabbitMQ, ZeroMQ, NSQ, NATS, ...) are either too complex to use/deploy or too "low-level".
 First mission: stay simple to learn, simple to use and simple to deploy.
 
-I want a system which provides a beautiful admin dashboard, where each client is authenticated
-automatically with an assymetric JWTs (no user/password to maintain for each client!) and where it
-is easy to define who has the right to listen/send what.
+I want a system 
+- which provides a beautiful admin dashboard (TODO)
+- where each client is with an assymetric JWTs (no user/password to maintain for each client!)
+- where it is easy to define who has the right to listen/send what
 
 It must provide a documentation for each channel and follow this principle `one channel endpoint/version = one JSON format` (no surprise!)
 
@@ -19,6 +20,10 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 ## Features
 
 - no SPF
+- authentication with assymetric pub/priv key
+- automatic subscription
+- right management
+- master/slave broker
 
 
 ## Installation
@@ -39,15 +44,15 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
   let config = {
     hosts         : [
-      'mybrokerurl.com:443@serviceId' // list of brokers mirror URLs for High Avaibility
-      // <url|ip>:<port>@<serviceId>#<token>
+      'mybrokerurl.com:443@serviceId#123456789' // list of brokers mirror URLs for High Avaibility
+      // <url|ip>:<port>@<serviceId>#<private-token-of-broker>
     ],
-    clientId      : 'easilys-APP-KEY'                  // The client id, it must be globally unique
+    clientId      : 'easilys-APP-KEY'           // The client id, it must be globally unique
     keysDirectory : 'path_to_keys_directory',
     keysName      : 'key_name',
   };
 
-  // When the client connects for the first time, it pushes the public key on the broker
+  // When the client connects for the first time, it pushes the public key on the broker (subscription)
   // Then, the broker will accept connections for this client only if tokens are generated with the same pub/priv key
   let mq = kittenMQ.client();
   
@@ -128,8 +133,8 @@ The broker must have a config file which defines client rights between channels
   // Rights
   rules    : [
     {
-      client        : 'easilys-*',
-      autoAccept    : true,                                // auto accept new clients which match this client name (only easilys is concerned)
+      client        : 'easilys-*',                         // if * is used, it auto accept new clients which match this client name (only easilys is concerned)
+      autoAccept    : true,                                // 
       read          : ['!invoice/*', 'public_message/*'],  // syntax is: endpoint/version/id, endpoint/version/* or endpoint/*
                                                            // "!" means the client cannot listen on *. It must listen on a specific channel name
                                                            // for example "invoice/v1/my-supplier-id-my-ref". Then this channel is "reserved" for this client
@@ -137,15 +142,9 @@ The broker must have a config file which defines client rights between channels
       write         : ['email/*', 'faxes/*']               
     },
     {
-      client        : 'email-service-1',
-      autoAccept    : false,                                // it must stays at false because
-      read          : ['*'],
-      write         : ['*']
-    },
-    {
-      client        : 'email-service-2',
-      read          : ['*'],
-      write         : ['*']
+      client        : 'email-service-1',                   // the first client which connects with this name reserve the connection forever (pub/priv key associated)
+      read          : ['email/*'],                        
+      write         : ['invoice/*']
     }
   ],
 
