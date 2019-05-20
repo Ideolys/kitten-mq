@@ -7,23 +7,23 @@ Easy to learn, Secure, Business-ready, Resilient & Fast Message Queue system
 Most of systems (Kafka, RabbitMQ, ZeroMQ, NSQ, NATS, ...) are either too complex to use/deploy or too "low-level".
 First mission: stay simple to learn, simple to use and simple to deploy.
 
-I want a system 
+We want a system 
 - which provides a beautiful admin dashboard (TODO)
-- where each client is with an assymetric JWTs (no user/password to maintain for each client!)
+- where each client is authenticated with assymetric JWTs (no user/password to maintain for each client!)
 - where it is easy to define who has the right to listen/send what
 
-It must provide a documentation for each channel and follow this principle `one channel endpoint/version = one JSON format` (no surprise!)
+It follows this principle `one channel endpoint/version = one JSON format`
 
 Kitten-MQ guarantees that a message will be delivered at least once, though duplicate messages are possible.
 Consumers should expect this and de-dupe or perform idempotent operations.
 
 ## Features
 
-- no SPF
+- no SPF, master/slave broker
 - authentication with assymetric pub/priv key
-- automatic subscription
-- right management
-- master/slave broker
+- automatic subscription of clients
+- channel right management (optional), if `rules` is defined in broker config
+- schema validation per channel (optional), if `channels` is defined in broker config
 
 
 ## Installation
@@ -34,12 +34,37 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
 ## Getting started
 
-1) Install a broker: the server which manages queues with a configuration below
+1) Install and start a broker: a server that manage and distribute messages among clients
+
+> The broker creates a directory in `/var/www/kitten-mq` and its config file in `/var/www/kitten-mq/kitten-mq.config.json`.
+
+```bash
+  [sudo] npm install -g kitten-mq
+  
+  # On ubuntu, deploy as systemd service (PRODUCTION ENV)
+  sudo $(npm root -g)/kitten-mq/bin/kittenMQ-systemctl
+  
+  # On OSX, of for debugging
+  kitten-mq start
+```
+
+2) Configure the broker and reload the configuration
+
+Adapt the configuration file for your needs `var/www/kitten-mq/kitten-mq.config.json` (cf. "Broker configuration" below )
+and relaod configuration without restarting kitten-mq:
+
+```bash
+  kitten-mq reload
+```
 
 
-2) Use it
+3) Use it in your code on client side
 
-```java
+```bash
+  npm i kitten-mq --save
+```
+
+```javascript
   let kittenMQ = require('kitten-mq');
 
   let config = {
@@ -130,10 +155,10 @@ The broker must have a config file which defines client rights between channels
   requeueLimit    : 5,    // limit of requeues for one packet
   requeueInterval : 100   // requeue interval in seconds
 
-  // Rights
+  // OPTIONAL: Rights management of channels
   rules    : [
     {
-      client        : 'easilys-*',                         // if * is used, it auto accept new clients which match this client name (only easilys is concerned)
+      client        : 'easilys-*',                         // if * is used, it auto accepts new clients which match this client name (only easilys is concerned)
       autoAccept    : true,                                // 
       read          : ['!invoice/*', 'public_message/*'],  // syntax is: endpoint/version/id, endpoint/version/* or endpoint/*
                                                            // "!" means the client cannot listen on *. It must listen on a specific channel name
@@ -142,13 +167,14 @@ The broker must have a config file which defines client rights between channels
       write         : ['email/*', 'faxes/*']               
     },
     {
-      client        : 'email-service-1',                   // the first client which connects with this name reserve the connection forever (pub/priv key associated)
-      read          : ['email/*'],                        
+      client        : 'email-service-1',                   // the first client which connects with this name reserve the connection forever. (pub/priv key associated)
+                                                           // then, a client with the same name can connect only if  it has the same pub/priv key
+      read          : ['email/*'],
       write         : ['invoice/*']
     }
   ],
 
-  // Channel descriptions
+  // OPTIONAL: JSON Schema validation of channels
   channels : [
     {
       'easilys/v1' :{
@@ -174,7 +200,7 @@ Kitten-MQ works like a radio. There are channels where everyone (if allowed) can
 
 Channel names must follow this pattern : `endpoint/version/destination_id`
 
-- `endpoint` can be any alphanumeric string without special characters (only `_` is allowed), consider it like the beginning of a REST API
+- `endpoint` can be any alphanumeric string without special characters (`-` are allowed), consider it like the beginning of a REST API
 - `version`  defines the JSON format version `v1, v2, ...`
 - `destination_id` can be any urlencoded string you want (at least `/` and `*` must be urlencoded)
 
@@ -186,14 +212,6 @@ One tuple `endpoint/v1` defines a JSON format
 KittenMQ duplicates messages of a channel to as many listeners, but is there are multiple consumers for the same channel, only one
 consumer will receive the message among other
 
-## Broker installation
-
-```bash
-  sudo npm install -g kitten-mq
-  sudo $(npm root -g)/kitten-mq/bin/kittenMQ-systemctl
-```
-
-The broker create a directory in `/var/www/kitten-mq` and its config file in `/var/www/kitten-mq/kitten-mq.config.json`.
 
 ### Reload the broker configuration
 
