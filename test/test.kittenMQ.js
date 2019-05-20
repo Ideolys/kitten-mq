@@ -2649,6 +2649,51 @@ describe('kitten-mq', () => {
 
     describe('send()', () => {
 
+      it('should not be able to send a ack', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+              ]
+            }, () => {
+              setTimeout(() => {
+                _client2.send('endpoint/endpoint/1', { test : 'hello world' }, (err, msg, info) => {
+                  try {
+                    info();
+                  }
+                  catch (e) {
+                    should(e.message).eql('info is not a function');
+                    should(info).be.an.Object();
+                  }
+
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                });
+              }, 20);
+            });
+          });
+        });
+      });
+
       it('should not send to /endpoint/*', done => {
         let _client1 = client();
         let _client2 = client();
