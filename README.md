@@ -34,7 +34,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
 ## Getting started
 
-1) Install and start a broker: a server that manage and distribute messages among clients
+**1) Install and start a broker: a server that manage and distribute messages among clients**
 
 > The broker creates a directory in `/var/www/kitten-mq` and its config file in `/var/www/kitten-mq/kitten-mq.config.json`.
 
@@ -48,7 +48,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
   kitten-mq start
 ```
 
-2) Configure the broker and reload the configuration
+**2) Configure the broker and reload the configuration**
 
 Adapt the configuration file for your needs `var/www/kitten-mq/kitten-mq.config.json` (cf. "Broker configuration" below )
 and relaod configuration without restarting kitten-mq:
@@ -57,8 +57,7 @@ and relaod configuration without restarting kitten-mq:
   kitten-mq reload
 ```
 
-
-3) Use it in your code on client side
+**3) Use it in your code on client side**
 
 ```bash
   npm i kitten-mq --save
