@@ -1,10 +1,12 @@
 const path      = require('path');
 const fs        = require('fs');
 const should    = require('should');
+const spawn     = require('child_process').spawn;
 const broker    = require('../index').broker;
 const client    = require('../index').client;
 const Socket    = require('kitten-socket');
 const constants = require('../lib/broker/constants');
+const rootPath  = process.cwd();
 
 const _configBroker1 = {
   serviceId             : 'broker-1',
@@ -5881,6 +5883,59 @@ describe('kitten-mq', () => {
         });
       });
 
+      it('should start/stop the broker without dropping packets', done => {
+        let _client1 = client();
+
+        let _configClient = {
+          clientId      : 'client_1',
+          keysDirectory : path.join(__dirname, 'keys'),
+          keysName      : 'client',
+          hosts         : [
+            'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId + '@' + configBroker1.serviceId
+          ]
+        };
+
+        executeCluster(['broker.js'], (err) => {
+          let _nbMessagesSent     = 0;
+          let _nbMessagesReceived = 0;
+
+          _client1.connect(_configClient, () => {});
+
+          setTimeout(() => {
+            _client1.listen('endpoint/1.0/test', (err, packet, info) => {
+              should(err).not.ok();
+              should(packet).eql({
+                test : 'hello world'
+              });
+              _nbMessagesReceived++;
+            });
+          }, 50);
+
+          var _interval = setInterval(() => {
+            _nbMessagesSent++;
+            _client1.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+              should(err).not.ok();
+            });
+          }, 50);
+
+          setTimeout(() => {
+            stopCluster(() => {
+              executeCluster(['broker.js'], (err) => {
+                setTimeout(() => {
+                  clearInterval(_interval);
+                  setTimeout(() => {
+                    should(_nbMessagesSent).be.approximately(_nbMessagesReceived, 2);
+                    _client1.disconnect(() => {
+                      stopCluster(done);
+                    });
+                  }, 150);
+                }, 800);
+              });
+            });
+          }, 300);
+        });
+      });
+
     });
 
     describe('reload', () => {
@@ -6087,3 +6142,58 @@ describe('kitten-mq', () => {
   });
 
 });
+
+
+var tempFolderPath = path.join(__dirname, '.temp');
+var pidsFilePath   = path.join(tempFolderPath, 'pids');
+
+function executeCluster(params, callback){
+  killPreviousPids();
+
+  var _executionPath = path.join(rootPath, 'test', 'datasets');
+
+  console.log(_executionPath);
+
+  program = spawn('node', params, { cwd : _executionPath, stdio :  [ process.stdin, process.stdout, process.stderr, 'ipc' ] });
+
+  setTimeout(callback, 1500);
+  program.on('message', function (msg) {
+    if(msg !== null && typeof msg === 'object' && msg.ready && callback){
+    }
+  });
+
+  program.on('error', (err) => {
+    console.log(err);
+  })
+
+  fs.appendFileSync(pidsFilePath, program.pid + '\n', 'utf8');
+}
+
+
+function stopCluster(callback){
+  if(program){
+    process.kill(program.pid);
+    program = null;
+  }
+
+  setTimeout(function(){
+    callback();
+  }, 500);
+}
+
+function prepareTempFolder () {
+  if(!fs.existsSync(tempFolderPath)) fs.mkdirSync(tempFolderPath);
+  if(!fs.existsSync(pidsFilePath))   fs.writeFileSync(pidsFilePath, '', 'utf8');
+}
+
+function killPreviousPids () {
+  prepareTempFolder();
+  var pids = fs.readFileSync(pidsFilePath, 'utf8').split('\n');
+  pids.forEach(function (pid) {
+    if(pid !== ''){
+      try{ process.kill(pid); }
+      catch(e){}
+    }
+  });
+  fs.writeFileSync(pidsFilePath, '', 'utf8');
+}
