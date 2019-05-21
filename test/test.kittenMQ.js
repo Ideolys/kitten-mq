@@ -1541,6 +1541,138 @@ describe('kitten-mq', () => {
           });
         });
       });
+
+      it('should track ids : add', done => {
+        let _client1 = client();
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+
+            let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1] }, (err, packet, info) => {});
+
+            _listener.addId(2, () => {
+              should(_listener._handler.ids).eql([1, 2]);
+
+              _listener.addId(3, (err) => {
+                should(_listener._handler.ids).eql([1, 2, 3]);
+
+                _client1.disconnect(() => {
+                  _broker1.stop(done);
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('should track ids : remove', done => {
+        let _client1 = client();
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+
+            let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, info) => {});
+
+            _listener.removeId(1, () => {
+              should(_listener._handler.ids).eql([2, 3]);
+
+              _listener.removeId(3, (err) => {
+                should(_listener._handler.ids).eql([2]);
+
+                _client1.disconnect(() => {
+                  _broker1.stop(done);
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('should track ids : add & remove', done => {
+        let _client1 = client();
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+
+            let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, info) => {});
+
+            _listener.removeId(1, () => {
+              should(_listener._handler.ids).eql([2, 3]);
+
+              _listener.addId(4, () => {
+                should(_listener._handler.ids).eql([2, 3, 4]);
+
+                _listener.removeId(3, (err) => {
+                  should(_listener._handler.ids).eql([2, 4]);
+
+                  _client1.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('should track ids with string endpoint: add & remove', done => {
+        let _client1 = client();
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+
+            let _listener = _client1.listen('endpoint/1.0/1', (err, packet, info) => {});
+
+            _listener.removeId(1, () => {
+              should(_listener._handler.ids).eql([]);
+
+              _listener.addId(4, () => {
+                should(_listener._handler.ids).eql([4]);
+
+                _listener.removeId(4, (err) => {
+                  should(_listener._handler.ids).eql([]);
+
+                  _client1.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
     });
 
     describe('consume()', () => {
@@ -2643,6 +2775,138 @@ describe('kitten-mq', () => {
                 _client2.send('endpoint/1.0/2', { test : 'hello world' });
                 _client2.send('endpoint/1.0/3', { test : 'hello world' });
               }, 20);
+            });
+          });
+        });
+      });
+
+      it('should track ids : add', done => {
+        let _client1 = client();
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+
+            let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1] }, (err, packet, info) => {});
+
+            _consumer.addId(2, () => {
+              should(_consumer._handler.ids).eql([1, 2]);
+
+              _consumer.addId(3, (err) => {
+                should(_consumer._handler.ids).eql([1, 2, 3]);
+
+                _client1.disconnect(() => {
+                  _broker1.stop(done);
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('should track ids : remove', done => {
+        let _client1 = client();
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+
+            let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, info) => {});
+
+            _consumer.removeId(1, () => {
+              should(_consumer._handler.ids).eql([2, 3]);
+
+              _consumer.removeId(3, (err) => {
+                should(_consumer._handler.ids).eql([2]);
+
+                _client1.disconnect(() => {
+                  _broker1.stop(done);
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('should track ids : add & remove', done => {
+        let _client1 = client();
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+
+            let _consumer = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [1, 2, 3] }, (err, packet, info) => {});
+
+            _consumer.removeId(1, () => {
+              should(_consumer._handler.ids).eql([2, 3]);
+
+              _consumer.addId(4, () => {
+                should(_consumer._handler.ids).eql([2, 3, 4]);
+
+                _consumer.removeId(3, (err) => {
+                  should(_consumer._handler.ids).eql([2, 4]);
+
+                  _client1.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('should track ids with string endpoint: add & remove', done => {
+        let _client1 = client();
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+
+            let _consumer = _client1.consume('endpoint/1.0/1', (err, packet, info) => {});
+
+            _consumer.removeId(1, () => {
+              should(_consumer._handler.ids).eql([]);
+
+              _consumer.addId(4, () => {
+                should(_consumer._handler.ids).eql([4]);
+
+                _consumer.removeId(4, (err) => {
+                  should(_consumer._handler.ids).eql([]);
+
+                  _client1.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              });
             });
           });
         });
@@ -5928,8 +6192,8 @@ describe('kitten-mq', () => {
                     _client1.disconnect(() => {
                       stopCluster(done);
                     });
-                  }, 150);
-                }, 800);
+                  }, 600);
+                }, 200);
               });
             });
           }, 300);
