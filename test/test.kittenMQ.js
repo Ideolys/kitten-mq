@@ -6473,8 +6473,6 @@ function executeCluster(params, callback){
 
   var _executionPath = path.join(rootPath, 'test', 'datasets');
 
-  console.log(_executionPath);
-
   program = spawn('node', params, { cwd : _executionPath, stdio :  [ process.stdin, process.stdout, process.stderr, 'ipc' ] });
 
   setTimeout(callback, 1500);
