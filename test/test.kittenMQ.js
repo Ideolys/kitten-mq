@@ -1673,6 +1673,61 @@ describe('kitten-mq', () => {
           });
         });
       });
+
+      it('should listen for multiple ids', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_1',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCalls = 0;
+
+              let _listener = _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
+                _nbCalls++;
+              });
+
+              _client2.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
+                _nbCalls++;
+              });
+
+              setTimeout(() => {
+                should(_nbCalls).eql(1);
+
+                _client1.disconnect(() => {
+                  _client2.disconnect(() => {
+                    _broker1.stop(done);
+                  });
+                });
+              }, 300);
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/1', { test : 'hello world' }, () => {
+                  _listener.removeId(1, () => {
+                    _client2.send('endpoint/1.0/1', { test : 'hello world' });
+                  });
+                });
+              }, 20);
+            });
+          });
+        });
+      });
     });
 
     describe('consume()', () => {
@@ -6188,9 +6243,11 @@ describe('kitten-mq', () => {
                 setTimeout(() => {
                   clearInterval(_interval);
                   setTimeout(() => {
-                    should(_nbMessagesSent).be.approximately(_nbMessagesReceived, 2);
                     _client1.disconnect(() => {
-                      stopCluster(done);
+                      stopCluster(() => {
+                        should(_nbMessagesSent).be.approximately(_nbMessagesReceived, 2);
+                        done();
+                      });
                     });
                   }, 600);
                 }, 200);
