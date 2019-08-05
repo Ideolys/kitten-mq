@@ -139,8 +139,8 @@ The broker must have a config file which defines client rights between channels
   registeredClientsPath : '/var/www/kitten-mq/clients',
   keysDirectory         : '/var/www/kitten-mq/keys',
   keysName              : '/var/www/kitten-mq/logs',
-  isMaster              : true, // Only the Master is send messages to listeners and consumers
-                                // Slaves receive messages and aknowledges (copy of master).
+  isMaster              : true, // Only the Master is allowed to send messages to listeners and consumers
+                                // Slaves receive messages and aknowledges
 
   socketServer : {
     port            : 1234, // server port
