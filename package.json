@@ -16,7 +16,7 @@
   "author": "",
   "license": "Ideolys",
   "dependencies": {
-    "kitten-jwt": "^0.3.1",
+    "kitten-jwt": "^1.0.0",
     "kitten-socket": "^1.2.6"
   },
   "dev-dependencies": {
