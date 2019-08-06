@@ -1,6 +1,6 @@
 {
   "name": "kitten-mq",
-  "version": "0.3.15",
+  "version": "0.4.0",
   "description": "message queue system",
   "main": "index.js",
   "bin": {
@@ -16,7 +16,7 @@
   "author": "",
   "license": "Ideolys",
   "dependencies": {
-    "kitten-jwt": "^0.3.1",
+    "kitten-jwt": "^1.0.0",
     "kitten-socket": "^1.2.6"
   },
   "dev-dependencies": {
