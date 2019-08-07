@@ -16,11 +16,14 @@
   "author": "",
   "license": "Ideolys",
   "dependencies": {
-    "kitten-jwt": "^1.0.0",
-    "kitten-socket": "^1.2.6"
+    "kitten-jwt": "1.0.0",
+    "kitten-socket": "1.2.6"
   },
   "dev-dependencies": {
     "mocha": "^6.0.2",
     "should": "^13.2.3"
+  },
+  "publishConfig": {
+    "registry": "https://npm.ideolys.com"
   }
 }
