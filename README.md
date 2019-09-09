@@ -81,7 +81,7 @@ and relaod configuration without restarting kitten-mq:
   let mq = kittenMQ.client();
   
   mq.connect(config, (err) => {
-    // if connect failed, it retries automatically and it calls this callback for each retry
+    // This callback is called only once
     console.log(err);
   });
 
