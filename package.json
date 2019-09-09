@@ -19,7 +19,7 @@
     "kitten-jwt": "1.0.0",
     "kitten-socket": "1.2.6"
   },
-  "dev-dependencies": {
+  "devDependencies": {
     "mocha": "^6.0.2",
     "should": "^13.2.3"
   },
