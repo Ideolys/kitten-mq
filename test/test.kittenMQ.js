@@ -330,6 +330,49 @@ describe('kitten-mq', () => {
         });
       });
 
+      it('should not call the connect callback after each reconnect', done => {
+        let _client = client();
+        let _broker1 = broker(configBroker1);
+        let _broker2 = broker(configBroker2);
+        _broker1.start(() => {
+          _broker2.start(() => {
+            _client.connect({
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId,
+                'localhost:' + _configBroker2.socketServer.port + '@' + _configBroker2.serviceId
+              ]
+            }, () => {
+              _client.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                should(err).not.ok();
+                should(_broker1._queues['endpoint/1.0']).be.ok();
+                should(_broker2._queues['endpoint/1.0']).be.ok();
+                should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(1);
+                should(_broker2._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(1);
+                _broker1.stop(() => {
+                  setTimeout(()=> {
+                    _broker1.start(() => {
+                      should(_broker1._queues['endpoint/1.0']).be.ok();
+                      should(_broker2._queues['endpoint/1.0']).be.ok();
+                      should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(1);
+                      should(_broker2._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(1);
+                      setTimeout(() => {
+                        _client.disconnect(() => {
+                          _broker1.stop(() => {
+                            _broker2.stop(done);
+                          });
+                        });
+                      }, 100);
+                    });
+                  }, 1000);
+                });
+              });
+            });
+          });
+        });
+      });
+
       it('should connect to hosts with correct token', done => {
         let _client = client();
 
