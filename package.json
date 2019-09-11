@@ -1,6 +1,6 @@
 {
   "name": "kitten-mq",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "message queue system",
   "main": "index.js",
   "bin": {
