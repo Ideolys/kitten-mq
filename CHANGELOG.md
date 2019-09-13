@@ -1,5 +1,8 @@
 # Kitten mq
 
+### V0.5.1
+  - Fix binary. exec() wast not loaded.
+
 ### v0.5.0
   - The callback of kittenMQ.client().connect(config, callback) is called only once now. Before, it was called after each reconnection.
 
