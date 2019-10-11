@@ -46,7 +46,9 @@ package-lock.json
 
 packets/
 test/keys/
-test/clients/
-test/clients_2/
+test/keys_broker_1/
+test/keys_broker_2/
+test/clients_broker_1/
+test/clients_broker_2/
 test/config*
 test/.temp/

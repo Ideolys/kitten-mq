@@ -1,5 +1,16 @@
 # Kitten mq
 
+### v0.6.0
+  - Enhance logs:
+    - Improve log cover
+    - Add a config key for master `logLevel = Int` to control lovel of logs among:
+      + `1 -> Debug`
+      + `2 -> Info`
+      + `3 -> Warn`
+      + `4 -> Error`
+  - Improve requeue feature after packet's timeout. A `setInterval` is used to check every second (not configurable) the acknowledges.
+  - Fix client diconnection : when a client had multiple nodes, the disconnection of one node was unsubscribing all the nodes.
+
 ### V0.5.1
   - Fix binary. exec() wast not loaded.
 
