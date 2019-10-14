@@ -1,5 +1,8 @@
 # Kitten mq
 
+### v0.6.1
+  - Fix JSON data for UI.
+
 ### v0.6.0
   - Enhance logs:
     - Improve log cover
