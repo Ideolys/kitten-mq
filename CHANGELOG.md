@@ -1,5 +1,8 @@
 # Kitten mq
 
+### v0.6.4 (to publish)
+  - Add HTTP route `GET /statistics` for Netdata.
+
 ### v0.6.3
   - Add setTimeout to reload the page at specified interval in configuration `pollIntervalHTTP` (in ms). Default value is 5 seconds.
   - Add overflow for last item in queue (UI);
