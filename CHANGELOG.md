@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.6.2
+  - Add a margin between each queue (UI).
+  - Add an overflow for client lists (UI).
+
 ### v0.6.1
   - Fix JSON data for UI.
 
