@@ -2,6 +2,7 @@
 
 ### v0.6.3
   - Add setTimeout to reload the page at specified interval in configuration `pollIntervalHTTP` (in ms). Default value is 5 seconds.
+  - Add overflow for last item in queue (UI);
 
 ### v0.6.2
   - Add a margin between each queue (UI).
