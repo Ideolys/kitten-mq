@@ -207,6 +207,17 @@ describe('broker queue & tree', () => {
         should(tree.clients).not.have.keys('client-1');
       });
 
+      it('should remove a listener client from id \'1\'', () => {
+        let tree = queueTree('idTree');
+
+        tree.addClient('client-1', '123456', constants.LISTENER_TYPES.LISTEN, 1);
+        tree.removeClient('client-1', '123456', constants.LISTENER_TYPES.LISTEN, '1');
+
+        should(tree.ids).have.keys('1');
+        should(tree.ids['1']).not.have.keys('client-1');
+        should(tree.clients).not.have.keys('client-1');
+      });
+
       it('should remove a consumer client from id 1', () => {
         let tree = queueTree('idTree');
 
@@ -415,6 +426,10 @@ describe('broker queue & tree', () => {
       });
 
     });
+
+  });
+
+  describe.only('queue', () => {
 
   });
 
