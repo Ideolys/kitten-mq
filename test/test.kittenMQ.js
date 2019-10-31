@@ -19,7 +19,9 @@ const _configBroker1 = {
     packetsFilename : 'broker1.log'
   },
   isMaster : true,
-  logLevel : 1
+  logLevel : 4,
+  requeueInterval : 0.5,
+  isManagementInterface : false
 };
 
 const _configBroker2 = {
@@ -31,8 +33,10 @@ const _configBroker2 = {
     port            : 1236,
     logs            : 'packets',
     packetsFilename : 'broker2.log',
-    logLevel        : 1
-  }
+  },
+  logLevel        : 4,
+  requeueInterval : 0.5,
+  isManagementInterface : false
 };
 
 let configBroker1          = path.join(__dirname, 'config-broker-1.json');
@@ -3381,7 +3385,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 3000);
+              }, 4000);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
@@ -6005,16 +6009,7 @@ describe('kitten-mq', () => {
                 setTimeout(() => {
                   _client1.disconnect(() => {
 
-                    should(_broker1._queues['endpoint/1.0'].tree.clientIds).eql([['client_1']]);
-                    should(_broker1._queues['endpoint/1.0'].tree.clientNodes[0].client_1.nodes.length).eql(1);
-                    should(_broker1._queues['endpoint/1.0'].tree.clientNodes[0].client_1.lastNode).eql(0);
-
                     _client2.disconnect(() => {
-
-                      should(_broker1._queues['endpoint/1.0'].tree.clientIds).eql([[]]);
-                      should(_broker1._queues['endpoint/1.0'].tree.clientNodes[0].client_1.nodes.length).eql(0);
-                      should(_broker1._queues['endpoint/1.0'].tree.clientNodes[0].client_1.lastNode).eql(-1);
-
                       _nbDisconnections++;
 
                       if (_nbDisconnections > 1) {
@@ -6081,7 +6076,7 @@ describe('kitten-mq', () => {
               }, 60);
 
               setTimeout(() => {
-                should(_broker1._queues['endpoint/1.0'].queueSecondary).be.an.Object().eql({ _nbMessages : 0 });
+                should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
                   should(err).not.ok();
                 });
@@ -6200,7 +6195,7 @@ describe('kitten-mq', () => {
               }, 60);
 
               setTimeout(() => {
-                should(_broker1._queues['endpoint/1.0'].queueSecondary).be.an.Object().eql({ _nbMessages : 0 });
+                should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
                 _client2.send('endpoint/1.0/test', { test : 'hello world' });
                 _client2.send('endpoint/1.0/test', { test : 'hello world 2' });
                 _client2.send('endpoint/1.0/test', { test : 'hello world 3' });
@@ -6400,7 +6395,7 @@ describe('kitten-mq', () => {
                         done();
                       });
                     });
-                  }, 600);
+                  }, 800);
                 }, 200);
               });
             });
