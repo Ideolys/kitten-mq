@@ -429,7 +429,350 @@ describe('broker queue & tree', () => {
 
   });
 
-  describe.only('queue', () => {
+  describe('queue', () => {
+
+    it('should define a queue object', () => {
+      let queueObject = queue('endpoint/v1', () => {});
+
+      should(queueObject).be.an.Object();
+      should(queueObject.queue).be.an.Array().and.have.lengthOf(0);
+      should(queueObject.nbMessagesReceived).eql(0);
+      should(queueObject.queueSecondary).eql({ _nbMessages : 0, _nbMessagesReceived : 0, _nbMessagesDropped : 0 });
+      should(queueObject.currentItem).eql(null);
+      should(queueObject.lastItem).eql(null);
+      should(queueObject.lastItemSecondary).eql(null);
+      should(queueObject.nbAcks).eql(0);
+      should(queueObject.nbExpectedAcks).eql(0);
+      should(queueObject.tree).be.an.Object();
+      should(queueObject._acks).be.an.Object().and.eql({});
+
+      should(queueObject.addClient).be.a.Function();
+      should(queueObject.addInQueue).be.a.Function();
+      should(queueObject.ack).be.a.Function();
+      should(queueObject.nack).be.a.Function();
+    });
+
+    it('should add an item in the waiting queue if no one is listening', () => {
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 });
+
+      queueObject.addInQueue(1, { data : { label : 'bla' }});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(1);
+      should(queueObject.queueSecondary[1]).eql([
+        [
+          1,
+          { data : { label : 'bla' } }
+        ]
+      ]);
+    });
+
+    it('should drop messages if limit is reached', () => {
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 5 });
+
+      for (let i = 0; i < 10; i++) {
+        queueObject.addInQueue(1, { data : { label : 'bla_' + i }});
+      }
+
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(5);
+      should(queueObject.queueSecondary._nbMessagesReceived).eql(10);
+      should(queueObject.queueSecondary._nbMessagesDropped).eql(5);
+      should(queueObject.queueSecondary[1]).eql([
+        [
+          1,
+          { data : { label : 'bla_0' } }
+        ],
+        [
+          1,
+          { data : { label : 'bla_1' } }
+        ],
+        [
+          1,
+          { data : { label : 'bla_2' } }
+        ],
+        [
+          1,
+          { data : { label : 'bla_3' } }
+        ],
+        [
+          1,
+          { data : { label : 'bla_4' } }
+        ]
+      ]);
+    });
+
+    it('should add an item in the waiting queue and process it when client is registering', () => {
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+
+        should(clients).eql(['client-1#123456']);
+        should(data).eql({ data : { label : 'bla' }});
+        should(header).eql(undefined);
+      };
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
+
+      queueObject.addInQueue(1, { data : { label : 'bla' }});
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+    });
+
+    it('should add items in the waiting queue and process them when client is registering', () => {
+      let i       = 1;
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+
+        should(clients).eql(['client-1#123456']);
+        should(header).eql(undefined);
+        should(data).eql({ data : { label : 'bla_' + i++ }});
+      };
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+    });
+
+    it('should not process items that belongs to another id', () => {
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 });
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+
+      queueObject.addClient(2, 'client-2', '987654', constants.LISTENER_TYPES.CONSUME);
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(2);
+      should(queueObject.queueSecondary).keys(1);
+      should(queueObject.queueSecondary[1]).eql([
+        [
+          1,
+          { data : { label : 'bla_1' }}
+        ],
+        [
+          1,
+          { data : { label : 'bla_2' }}
+        ]
+      ]);
+    });
+
+    it('should send one item to one client', () => {
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(header).eql(undefined);
+        should(data).eql({ data : { label : 'bla_1' }});
+
+        acks['first_packet'] = { created : Date.now() };
+
+        queueObject.ack('first_packet');
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item if not acked by client', done => {
+      let iterator = 0;
+      let handler  = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(data).eql({ data : { label : 'bla_1' }});
+
+        if (!header) {
+          acks['first_packet'] = { created : Date.now(), messageId : 1 };
+        } else {
+          should(header.nbRequeues).eql(++iterator);
+        }
+
+        if (iterator === 1) {
+          done();
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.5 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item if not acked by client and wait for time defined in configuration', done => {
+      let iterator = 0;
+      let handler  = (acks, clients, data, header) => {
+        let time = null;
+
+        if (header) {
+          time = header.created + (2.2*1000);
+        }
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(data).eql({ data : { label : 'bla_1' }});
+
+        if (!header) {
+          acks['first_packet'] = { created : Date.now(), messageId : 1 };
+        } else {
+          should(header.nbRequeues).eql(++iterator);
+          should(time).be.approximately(Date.now(), 1000);
+        }
+
+        if (iterator === 1) {
+          done();
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item if not acked by client and then continue to send other items', done => {
+      let iterator       = 0;
+      let expectedLabels = ['bla_1', 'bla_2', 'bla_1'];
+      let receivedLabels = [];
+
+      let handler  = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+
+        receivedLabels.push(data.data.label);
+
+        if (!header) {
+          acks['first_packet'] = { created : Date.now(), messageId : 1 };
+
+          if (!iterator && data.data.label === 'bla_2') {
+            queueObject.ack('first_packet');
+            return;
+          }
+        } else {
+          should(header.nbRequeues).eql(++iterator);
+        }
+
+        if (iterator === 1) {
+          should(receivedLabels).eql(expectedLabels);
+          done();
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.5 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+
+      should(queueObject.queue).have.lengthOf(1);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item nacked by client', done => {
+      let handler  = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(data).eql({ data : { label : 'bla_1' } });
+
+        if (!header) {
+          acks['first_packet'] = { created : Date.now(), messageId : 1 };
+
+          queueObject.nack('first_packet');
+          return;
+        }
+
+        done();
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+
+      should(queueObject.queue).have.lengthOf(1);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should send one item to multiple clients (3)', done => {
+      let handler  = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql([
+          'client-1#123456',
+          'client-2#123456',
+          'client-3#123456'
+        ]);
+        should(header).eql(undefined);
+        should(data).eql({ data : { label : 'bla' }});
+
+        should(queueObject.nbAcks).eql(0);
+        should(queueObject.nbExpectedAcks).eql(3);
+
+        queueObject.ack('first_packet');
+        done();
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+      queueObject.addClient(1, 'client-2', '123456', constants.LISTENER_TYPES.LISTEN);
+      queueObject.addClient(1, 'client-3', '123456', constants.LISTENER_TYPES.LISTEN);
+
+      queueObject.addInQueue(1, { data : { label : 'bla' }});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should not add undefined item in the queue', () => {
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 }, { id : ['int'], label : ['string'] });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      let res = queueObject.addInQueue(1, {});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+
+      should(res).eql([{
+        error : 'No value'
+      }]);
+    });
+
+    it('should not add null item in the queue', () => {
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 }, { id : ['int'], label : ['string'] });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      let res = queueObject.addInQueue(1, { data : null });
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+
+      should(res).eql([{
+        error : 'No value'
+      }]);
+    });
+
+    it('should validate the item before to push in the queue', () => {
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 }, { id : ['int'], label : ['string'] });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      let res = queueObject.addInQueue(1, { data : { label : 'bla' }});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+
+      should(res).eql([{
+        error : '${must be an integer}',
+        field : 'id',
+        index : null,
+        value : undefined
+      }]);
+    });
 
   });
 
