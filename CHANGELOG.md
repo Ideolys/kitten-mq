@@ -1,7 +1,10 @@
 # Kitten mq
 
-### v0.6.4 (to publish)
+### v0.7.0
   - Add HTTP route `GET /statistics` for Netdata.
+  - Refacto queue tree in order to improve performance and simplify code.
+  - Fix a disconnection bug. Disconnected nodes were always in the queue tree.
+  - Fix timeout item the queue.
 
 ### v0.6.3
   - Add setTimeout to reload the page at specified interval in configuration `pollIntervalHTTP` (in ms). Default value is 5 seconds.
