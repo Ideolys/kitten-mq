@@ -2,6 +2,7 @@
 
 ### v0.8.0
   - Add explicit log when not allowing handler registration for exclusive routes already registered.
+  - Show dropped items in logs when dropping items in secondary queue.
 
 ### v0.7.0
   - Add HTTP route `GET /statistics` for Netdata.
