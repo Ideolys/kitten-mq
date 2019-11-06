@@ -1,5 +1,8 @@
 # Kitten mq
 
+### v0.8.0
+  - Add explicit log when not allowing handler registration for exclusive routes already registered.
+
 ### v0.7.0
   - Add HTTP route `GET /statistics` for Netdata.
   - Refacto queue tree in order to improve performance and simplify code.
