@@ -124,8 +124,8 @@ and relaod configuration without restarting kitten-mq:
   let listener = mq.listen(_channel, (msg) => {
     console.log(msg);
   });
-  listener.addId([], (err) => {}); // you can add id to listen at runtime
-  listener.removeId([], (err) => {}); // or remove id to listen at runtime
+  listener.addId(10, (err) => {}); // you can add id to listen at runtime
+  listener.removeId(222, (err) => {}); // or remove id to listen at runtime
 
 ```
 
