@@ -8,7 +8,7 @@ Most of systems (Kafka, RabbitMQ, ZeroMQ, NSQ, NATS, ...) are either too complex
 First mission: stay simple to learn, simple to use and simple to deploy.
 
 We want a system 
-- which provides a beautiful admin dashboard (TODO)
+- which provides a beautiful admin dashboard
 - where each client is authenticated with assymetric JWTs (no user/password to maintain for each client!)
 - where it is easy to define who has the right to listen/send what
 
@@ -119,7 +119,7 @@ and relaod configuration without restarting kitten-mq:
   let _channel = {
     endpoint : 'endpoint',
     version : 'v1',
-    id : [123, 22, 33]
+    ids : [123, 22, 33]
   };
   let listener = mq.listen(_channel, (msg) => {
     console.log(msg);
