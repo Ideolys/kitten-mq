@@ -188,6 +188,10 @@ The broker must have a config file which defines client rights between channels
 
 ## Concepts to learn
 
+### Dashboard URL
+
+http://kitten-mq.dev.easilys.com:4123
+
 ### What is a broker?
 
 A broker is a server which receives message from clients and push them to other clients
