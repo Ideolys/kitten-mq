@@ -820,11 +820,13 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 200);
+              }, 400);
 
-              for (var i = 0; i < 4; i++) {
-                _client2.send('endpoint/1.0/test', { test : 'hello world' });
-              }
+              setTimeout(() => {
+                for (var i = 0; i < 4; i++) {
+                  _client2.send('endpoint/1.0/test', { test : 'hello world' });
+                }
+              }, 50)
             });
           });
         });
@@ -1196,14 +1198,14 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 150);
+              }, 200);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/1', { test : 'hello world' });
                 _client2.send('endpoint/1.0/2', { test : 'hello world' });
                 _client2.send('endpoint/1.0/3', { test : 'hello world' });
                 _client2.send('endpoint/1.0/4', { test : 'hello world' });
-              }, 20);
+              }, 50);
             });
           });
         });
@@ -1739,7 +1741,7 @@ describe('kitten-mq', () => {
             ]
           }, () => {
             _client2.connect({
-              clientId      : 'client_1',
+              clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
               keysName      : 'client',
               hosts         : [
@@ -1759,7 +1761,7 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 should(_nbCallsClient1).eql(1);
-                should(_nbCallsClient2).eql(1);
+                should(_nbCallsClient2).eql(2);
 
                 _client1.disconnect(() => {
                   _client2.disconnect(() => {
@@ -1895,6 +1897,15 @@ describe('kitten-mq', () => {
               'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
             ]
           }, () => {
+            _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
+              _isListenClient1HasBeenCalled = true;
+              ack();
+              should(err).not.ok();
+              should(packet).eql({
+                test : 'hello world'
+              });
+            });
+
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
@@ -1903,15 +1914,6 @@ describe('kitten-mq', () => {
                 'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
               ]
             }, () => {
-              _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
-                _isListenClient1HasBeenCalled = true;
-                ack();
-                should(err).not.ok();
-                should(packet).eql({
-                  test : 'hello world'
-                });
-              });
-
               _client2.consume('endpoint/1.0/test', (err, packet, ack) => {
                 _isListenClient2HasBeenCalled = true;
                 ack();
@@ -1930,7 +1932,7 @@ describe('kitten-mq', () => {
                     _broker1.stop(done);
                   });
                 });
-              }, 100);
+              }, 150);
 
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
@@ -2076,6 +2078,16 @@ describe('kitten-mq', () => {
               'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
             ]
           }, () => {
+            _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
+              _handlerCalls.push('handler1');
+              ack();
+            });
+
+            _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
+              _handlerCalls.push('handler2');
+              ack();
+            });
+
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
@@ -2084,16 +2096,6 @@ describe('kitten-mq', () => {
                 'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
               ]
             }, () => {
-              _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
-                _handlerCalls.push('handler1');
-                ack();
-              });
-
-              _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
-                _handlerCalls.push('handler2');
-                ack();
-              });
-
               _client2.consume('endpoint/1.0/test', (err, packet, ack) => {
                 _handlerCalls.push('handler3');
                 ack();
@@ -3033,6 +3035,22 @@ describe('kitten-mq', () => {
               'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
             ]
           }, () => {
+            let _nbCallsListener1 = 0;
+            let _consumer1 = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [] }, (err, packet, done, info) => {
+              _nbCallsListener1++;
+              should(err).not.ok();
+              should(packet).eql({
+                test : 'hello world'
+              });
+              done();
+            });
+
+            _consumer1.addId([1], (err) => {
+              if (err) {
+                _nbErrors++;
+              }
+            });
+
             _client2.connect({
               clientId      : 'client_1',
               keysDirectory : path.join(__dirname, 'keys'),
@@ -3041,26 +3059,10 @@ describe('kitten-mq', () => {
                 'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
               ]
             }, () => {
-              let _nbCallsListener1 = 0;
+
               let _nbCallsListener2 = 0;
               let _nbErrors         = 0;
-
-              let _consumer1 = _client1.consume({ endpoint : 'endpoint', version : '1.0', ids : [] }, (err, packet, done, info) => {
-                _nbCallsListener1++;
-                should(err).not.ok();
-                should(packet).eql({
-                  test : 'hello world'
-                });
-                done();
-              });
-
-              _consumer1.addId([1], (err) => {
-                if (err) {
-                  _nbErrors++;
-                }
-              });
-
-              let _consumer2 = _client2.consume({ endpoint : 'endpoint', version : '1.0', ids : [1] }, (err, packet, done, info) => {
+              _client2.consume({ endpoint : 'endpoint', version : '1.0', ids : [1] }, (err, packet, done, info) => {
                 _nbCallsListener2++;
                 should(err).not.ok();
                 should(packet).eql({
@@ -3412,6 +3414,15 @@ describe('kitten-mq', () => {
               'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
             ]
           }, () => {
+            let _nbCallsListener1 = 0;
+            _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
+              _nbCallsListener1++;
+
+              if (_nbCallsListener1 > 2) {
+                ack();
+              }
+            });
+
             _client2.connect({
               clientId      : 'client_2',
               keysDirectory : path.join(__dirname, 'keys'),
@@ -3420,15 +3431,8 @@ describe('kitten-mq', () => {
                 'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
               ]
             }, () => {
-              let _nbCallsListener1 = 0;
               let _nbCallsListener2 = 0;
-              _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
-                _nbCallsListener1++;
 
-                if (_nbCallsListener1 > 2) {
-                  ack();
-                }
-              });
               _client2.consume('endpoint/1.0/test', (err, packet, ack) => {
                 _nbCallsListener2++;
                 if (_nbCallsListener2 > 2) {
@@ -4745,6 +4749,16 @@ describe('kitten-mq', () => {
                 'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
               ]
             }, () => {
+              let _nbCallsListener1 = 0;
+              _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
+                _nbCallsListener1++;
+
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
               _client2.connect({
                 clientId      : 'client_2',
                 keysDirectory : path.join(__dirname, 'keys'),
@@ -4753,18 +4767,8 @@ describe('kitten-mq', () => {
                   'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
                 ]
               }, () => {
-                let _nbCallsListener1 = 0;
                 let _nbCallsListener2 = 0;
                 let _nbErrors         = 0;
-
-                _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
-                  _nbCallsListener1++;
-
-                  should(err).not.ok();
-                  should(packet).eql({
-                    test : 'hello world'
-                  });
-                });
 
                 _client2.listen('endpoint/1.0/1', (err, packet) => {
                   should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
@@ -4827,6 +4831,16 @@ describe('kitten-mq', () => {
                 'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
               ]
             }, () => {
+              let _nbCallsListener1 = 0;
+              _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
+                _nbCallsListener1++;
+
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
               _client2.connect({
                 clientId      : 'client_2',
                 keysDirectory : path.join(__dirname, 'keys'),
@@ -4835,18 +4849,8 @@ describe('kitten-mq', () => {
                   'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
                 ]
               }, () => {
-                let _nbCallsListener1 = 0;
                 let _nbCallsListener2 = 0;
                 let _nbErrors         = 0;
-
-                _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
-                  _nbCallsListener1++;
-
-                  should(err).not.ok();
-                  should(packet).eql({
-                    test : 'hello world'
-                  });
-                });
 
                 _client2.listen('endpoint/1.0/1', (err, packet) => {
                   should(err).eql({ message : constants.ERRORS.NOT_ALLOWED });
@@ -4914,6 +4918,16 @@ describe('kitten-mq', () => {
                 'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
               ]
             }, () => {
+              let _nbCallsListener1 = 0;
+              _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
+                _nbCallsListener1++;
+
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+              });
+
               _client2.connect({
                 clientId      : 'client_2',
                 keysDirectory : path.join(__dirname, 'keys'),
@@ -4922,17 +4936,7 @@ describe('kitten-mq', () => {
                   'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
                 ]
               }, () => {
-                let _nbCallsListener1 = 0;
                 let _nbCallsListener2 = 0;
-
-                _client1.listen({ endpoint : 'endpoint', version : '1.0', ids : [1, 2] }, (err, packet) => {
-                  _nbCallsListener1++;
-
-                  should(err).not.ok();
-                  should(packet).eql({
-                    test : 'hello world'
-                  });
-                });
 
                 _client2.listen('endpoint/1.0/1', (err, packet) => {
                   _nbCallsListener2++;
@@ -5988,6 +5992,14 @@ describe('kitten-mq', () => {
             'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId + '@' + configBroker1.serviceId
           ]
         };
+        _configClient2 = {
+          clientId      : 'client_2',
+          keysDirectory : path.join(__dirname, 'keys'),
+          keysName      : 'client',
+          hosts         : [
+            'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId + '@' + configBroker1.serviceId
+          ]
+        };
 
         let _broker1 = broker(configBroker1);
 
@@ -5995,7 +6007,7 @@ describe('kitten-mq', () => {
 
         let _register = () => {
           _client1.connect(_configClient, () => {
-            _client2.connect(_configClient, () => {
+            _client2.connect(_configClient2, () => {
 
               _client2.listen('endpoint/1.0/test', (err, packet) => {});
 
@@ -6005,7 +6017,7 @@ describe('kitten-mq', () => {
                   test : 'hello world'
                 });
 
-                // Little timeout to let time to listerners to register
+                // Little timeout to let time to listeners to register
                 setTimeout(() => {
                   _client1.disconnect(() => {
 
@@ -6019,7 +6031,7 @@ describe('kitten-mq', () => {
                       _register();
                     });
                   });
-                }, 20)
+                }, 150)
               });
 
               setTimeout(() => {
