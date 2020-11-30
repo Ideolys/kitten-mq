@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.9.0
+*202X-XX-XX*
+  - Add open metrics statistics.
+
 ### v0.8.0
   - Add explicit log when not allowing handler registration for exclusive routes already registered.
   - Show dropped items in logs when dropping items in secondary queue.

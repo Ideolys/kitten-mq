@@ -7,7 +7,7 @@ Easy to learn, Secure, Business-ready, Resilient & Fast Message Queue system
 Most of systems (Kafka, RabbitMQ, ZeroMQ, NSQ, NATS, ...) are either too complex to use/deploy or too "low-level".
 First mission: stay simple to learn, simple to use and simple to deploy.
 
-We want a system 
+We want a system
 - which provides a beautiful admin dashboard
 - where each client is authenticated with assymetric JWTs (no user/password to maintain for each client!)
 - where it is easy to define who has the right to listen/send what
@@ -49,10 +49,10 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
 ```bash
   [sudo] npm install -g kitten-mq
-  
+
   # On ubuntu, deploy as systemd service (PRODUCTION ENV)
   sudo $(npm root -g)/kitten-mq/bin/kittenMQ-systemctl
-  
+
   # On OSX, of for debugging
   kitten-mq start
 ```
@@ -88,7 +88,7 @@ and relaod configuration without restarting kitten-mq:
   // When the client connects for the first time, it pushes the public key on the broker (subscription)
   // Then, the broker will accept connections for this client only if tokens are generated with the same pub/priv key
   let mq = kittenMQ.client();
-  
+
   mq.connect(config, (err) => {
     // This callback is called only once
     console.log(err);
@@ -171,12 +171,12 @@ The broker must have a config file which defines client rights between channels
                                                            // "!" means the client cannot listen on *. It must listen on a specific channel id
                                                            // for example "invoice/v1/my-supplier-id-my-ref". Then this channel is "reserved" for this client
                                                            // exclusively. Other clients cannot listen to the same channel.
-      write         : ['email/*', 'faxes/*']               
+      write         : ['email/*', 'faxes/*']
     },
     {
       client        : 'email-service-1',                   // the first client that connects with this name reserve the connection forever (pub/priv key associated).
                                                            // Then, a client with the same name can connect only if it has the same pub/priv key
-      read          : ['email/*'],                   
+      read          : ['email/*'],
       write         : ['invoice/*']
     }
   ],
@@ -194,6 +194,26 @@ The broker must have a config file which defines client rights between channels
   ]
 }
 ```
+
+## Statistics
+
+The broker defines statistics at `GET /statistics` if config parameter `isManagementInterface` is set to `true`.
+
+Available statistics are:
+
+Name                                            | Description
+------------------------------------------------|-------------
+kitten_mq_info_uptime                           | Broker's uptime
+kitten_mq_messages_sent_count                   | Number of messages sent to clients
+kitten_mq_messages_sent_per_seconds_average     | Average of number of messages sent to clients per seconds
+kitten_mq_messages_received_count               | Number of messages added to queues
+kitten_mq_messages_received_per_seconds_average | Average of number of messages added to queues per seconds
+kitten_mq_messages_acked_count                  | Number of messages acked
+kitten_mq_messages_acked_per_seconds_average    | Average of number of messages acked per seconds
+kitten_mq_queue_messages_count                  | Number of messages added to a queue
+kitten_mq_queue_messages_dropped_count          | Number of messages dropped by a queue
+kitten_mq_queue_messages_timeout_count          | Number of messages in timeout in a queue
+
 
 ## Concepts to learn
 
