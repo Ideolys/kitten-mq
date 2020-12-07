@@ -32,6 +32,15 @@ Consumers should expect this and de-dupe or perform idempotent operations.
   npm install kitten-mq --save
 ```
 
+### Systemd
+
+- Install
+
+```
+ cd /tmp
+ curl https://raw.githubusercontent.com/Ideolys/fpark/master/bin/install.sh | sudo bash
+```
+
 ## Getting started
 
 **1) Install and start a broker: a server that manage and distribute messages among clients**

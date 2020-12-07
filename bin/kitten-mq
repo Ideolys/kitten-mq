@@ -1,0 +1,106 @@
+#!/usr/bin/env node
+const broker   = require('../lib/broker/index');
+const path     = require('path')
+const fs       = require('fs');
+const { exit } = require('process');
+const exec     = require('child_process').exec;
+
+const _path   = process.cwd();
+const pidPath = path.join(_path, 'pid');
+
+let _config = 'kitten-mq.config.json';
+
+function printUsage () {
+  console.log('kitten-mq CLI')
+  console.log('===============================================');
+  console.group('Commands');
+  console.log('start', '\t', 'Start the server');
+  console.log('reload', '\t', 'Reload the broker configuration');
+  console.log('init-conf', '\t', 'Init configuration');
+  console.log('-----------------------------------------------');
+  console.group('Options');
+  console.log('-c', '\t', 'Path to config');
+  console.groupEnd('Options');
+}
+
+let _args     = process.argv.slice(2);
+let _commands = ['start', 'reload', 'init-conf'];
+
+if (_commands.indexOf(_args[0]) === -1) {
+  return printUsage();
+}
+
+let _argValues = {};
+
+for (let i = 0; i < _args.length; i++) {
+  switch (_args[i]) {
+    case '-c':
+      _config = _args[i + 1];
+      i++;
+      break;
+    default:
+      _argValues['param'] = _args[i];
+      break;
+  }
+}
+
+loadConfig(_argValues['c']);
+
+if (Object.keys(_config).length === 0) {
+  return console.error('No config found, you should provide a config with option "-c" as "-c /path/to/config.json"');
+}
+
+switch (_args[0]) {
+  case 'start':
+    start(_config);
+    break;
+  case 'reload':
+    reload();
+    break;
+  case 'init-conf':
+    initConfiguration();
+    break;
+}
+
+/**
+ * Start broker
+ * @param {String} configPath
+ */
+function start (configPath) {
+  let _broker = broker(configPath, true);
+  _broker.start(() => {
+    fs.writeFileSync(pidPath, process.pid);
+  });
+}
+
+/**
+ * Reload broker's configuration
+ */
+function reload () {
+  return fs.stat(pidPath, err => {
+    if (err) {
+      return;
+    }
+
+    let pid = fs.readFileSync(pidPath, 'utf8');
+
+    exec('kill -USR2 ' + pid);
+  });
+}
+
+function initConfiguration () {
+  fs.readFile(path.join(__dirname, 'config.json'), (err, file) => {
+    if (err) {
+      console.log(err);
+      return process.exit();
+    }
+
+    fs.writeFile(_path, _config, err => {
+      if (err) {
+        console.log(err);
+      }
+
+      process.exit();
+    });
+  })
+}

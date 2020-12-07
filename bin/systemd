@@ -1,0 +1,22 @@
+[Unit]
+Description=Kitten-mq
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/kitten-mq
+User=kitten-mq
+ExecStart=/var/www/kitten-mq/kitten-mq start -c kitten-mq.config.json
+Restart=always
+ProtectControlGroups=true
+ProtectHostname=true
+ProtectHome=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=full
+LockPersonality=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
