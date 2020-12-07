@@ -83,6 +83,7 @@ function reload () {
     let pid = fs.readFileSync(pidPath, 'utf8');
 
     exec('kill -USR2 ' + pid);
+    process.exit();
   });
 }
 
