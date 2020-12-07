@@ -1,7 +1,7 @@
 # Kitten mq
 
 ### v0.9.0
-*202X-XX-XX*
+*2020-12-07*
   - Add open metrics statistics.
 
 ### v0.8.0
