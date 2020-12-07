@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.9.0
+*20XX-XX-XX*
+  - Properly exit after command reload.
+
 ### v0.8.0
 *2020-12-07*
   - Add open metrics statistics.
