@@ -27,10 +27,6 @@ jobs:
         run: sudo npm i -g pkg
       - name: Build
         run: pkg -t node12-linux --out-path ./build .
-      - name: Copy dependencies in build dir
-        run: |
-          cp -r node_modules/sharp build/sharp
-          mv build/fpark build/sharp/build/Release
       - name: Compress build
         run: tar -czvf build.tar.gz -C build .
       - name: Create Release
