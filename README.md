@@ -38,7 +38,7 @@ Consumers should expect this and de-dupe or perform idempotent operations.
 
 ```
  cd /tmp
- curl https://raw.githubusercontent.com/Ideolys/fpark/master/bin/install.sh | sudo bash
+ curl https://raw.githubusercontent.com/Ideolys/kitten-mq/master/bin/install.sh | sudo bash
 ```
 
 ## Getting started

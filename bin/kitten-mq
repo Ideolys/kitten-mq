@@ -44,8 +44,6 @@ for (let i = 0; i < _args.length; i++) {
   }
 }
 
-loadConfig(_argValues['c']);
-
 if (Object.keys(_config).length === 0) {
   return console.error('No config found, you should provide a config with option "-c" as "-c /path/to/config.json"');
 }
