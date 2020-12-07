@@ -4,7 +4,7 @@
   "description": "message queue system",
   "main": "index.js",
   "bin": {
-    "kitten-mq": "./bin/kittenMQ"
+    "kitten-mq": "./bin/kitten-mq"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha test/test.* -w -t 6000"
