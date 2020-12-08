@@ -217,10 +217,6 @@ kitten_mq_queue_messages_timeout_count          | Number of messages in timeout 
 
 ## Concepts to learn
 
-### Dashboard URL
-
-http://kitten-mq.dev.easilys.com:4123
-
 ### What is a broker?
 
 A broker is a server which receives message from clients and push them to other clients
