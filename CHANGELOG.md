@@ -1,7 +1,11 @@
 # Kitten mq
 
+### v0.8.5
+*2020-12-09*
+ - Channel validation was not correct.
+
 ### v0.8.4
-*20XX-12-07*
+*2020-12-07*
   - Properly exit after command reload.
   - Fix statistics output.
 
