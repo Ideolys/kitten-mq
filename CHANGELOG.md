@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.8.6
+*2020-XX-XX*
+  - Statistics "per_senconds" were not correct.
+
 ### v0.8.5
 *2020-12-09*
  - Channel validation was not correct.
