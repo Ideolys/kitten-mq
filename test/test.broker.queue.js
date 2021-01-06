@@ -729,6 +729,84 @@ describe('broker queue & tree', () => {
       should(queueObject.queueSecondary._nbMessages).eql(0);
     });
 
+    it('should send multiple items to one client : prefetch 3', done => {
+      let iterator     = 0;
+      let messagesSent = [];
+
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(header).eql(undefined);
+        should(data).eql({ data : { label : 'bla_' + (iterator + 1) }});
+
+        acks[data.data.label] = { created : Date.now(), messageId : data.label };
+
+        messagesSent.push(data.data.label);
+        iterator++;
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, prefetch : 3, requeueInterval : 5 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_3' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_4' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_5' }});
+
+      setTimeout(() => {
+        should(iterator).eql(3);
+        should(Object.keys(queueObject._acks)).eql(['bla_1', 'bla_2', 'bla_3']);
+        should(messagesSent).eql(['bla_1', 'bla_2', 'bla_3']);
+        done();
+      }, 3000);
+
+      should(queueObject.queue).have.lengthOf(2);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should send multiple items to multiple clients : prefetch 3', done => {
+      let iterator     = 0;
+      let messagesSent = [];
+
+      let handler = (acks, clients, data, header) => {
+        iterator++;
+        should(acks).be.an.Object();
+        if (iterator % 2 === 0) {
+          should(clients).eql(['client-2#123457']);
+        }
+        else {
+          should(clients).eql(['client-1#123456']);
+        }
+        should(header).eql(undefined);
+        should(data).eql({ data : { label : 'bla_' + (iterator) }});
+
+        acks[data.data.label] = { created : Date.now(), messageId : data.label };
+
+        messagesSent.push(data.data.label);
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, prefetch : 3, requeueInterval : 5 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+      queueObject.addClient(1, 'client-2', '123457', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_3' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_4' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_5' }});
+
+      setTimeout(() => {
+        should(iterator).eql(3);
+        should(Object.keys(queueObject._acks)).eql(['bla_1', 'bla_2', 'bla_3']);
+        should(messagesSent).eql(['bla_1', 'bla_2', 'bla_3']);
+        done();
+      }, 3000);
+
+      should(queueObject.queue).have.lengthOf(2);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
     it('should not add undefined item in the queue', () => {
       let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 }, { id : ['int'], label : ['string'] });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
