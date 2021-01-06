@@ -534,7 +534,7 @@ describe('kitten-mq', () => {
                 'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
               ]
             }, () => {
-              _client1.listen('*', (err) => {
+              _client1.listen('*', (err, cl) => {
                 should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
 
                 _client1.disconnect(() => {
@@ -3511,7 +3511,7 @@ describe('kitten-mq', () => {
                       });
                     });
                   });
-                }, 3000);
+                }, 3500);
 
                 setTimeout(() => {
                   _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
@@ -3630,7 +3630,7 @@ describe('kitten-mq', () => {
                       });
                     });
                   });
-                }, 3000);
+                }, 3500);
 
                 setTimeout(() => {
                   _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {

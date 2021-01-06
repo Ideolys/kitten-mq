@@ -441,8 +441,6 @@ describe('broker queue & tree', () => {
       should(queueObject.currentItem).eql(null);
       should(queueObject.lastItem).eql(null);
       should(queueObject.lastItemSecondary).eql(null);
-      should(queueObject.nbAcks).eql(0);
-      should(queueObject.nbExpectedAcks).eql(0);
       should(queueObject.tree).be.an.Object();
       should(queueObject._acks).be.an.Object().and.eql({});
 
@@ -563,7 +561,7 @@ describe('broker queue & tree', () => {
         should(header).eql(undefined);
         should(data).eql({ data : { label : 'bla_1' }});
 
-        acks['first_packet'] = { created : Date.now() };
+        acks['first_packet'] = { created : Date.now(), messageId : 'first_packet' };
 
         queueObject.ack('first_packet');
       };
@@ -617,7 +615,7 @@ describe('broker queue & tree', () => {
         should(data).eql({ data : { label : 'bla_1' }});
 
         if (!header) {
-          acks['first_packet'] = { created : Date.now(), messageId : 1 };
+          acks['first_packet'] = { created : Date.now(), messageId : 'first_packet'};
         } else {
           should(header.nbRequeues).eql(++iterator);
           should(time).be.approximately(Date.now(), 1000);
@@ -649,10 +647,10 @@ describe('broker queue & tree', () => {
         receivedLabels.push(data.data.label);
 
         if (!header) {
-          acks['first_packet'] = { created : Date.now(), messageId : 1 };
+          acks[data.data.label] = { created : Date.now(), messageId : data.data.label };
 
           if (!iterator && data.data.label === 'bla_2') {
-            queueObject.ack('first_packet');
+            queueObject.ack(data.data.label);
             return;
           }
         } else {
@@ -676,19 +674,24 @@ describe('broker queue & tree', () => {
     });
 
     it('should resend item nacked by client', done => {
+      let iterator = 0;
+
       let handler  = (acks, clients, data, header) => {
         should(acks).be.an.Object();
         should(clients).eql(['client-1#123456']);
         should(data).eql({ data : { label : 'bla_1' } });
 
         if (!header) {
-          acks['first_packet'] = { created : Date.now(), messageId : 1 };
+          acks['first_packet'] = { created : Date.now(), messageId : 'first_packet' };
 
           queueObject.nack('first_packet');
+          iterator++;
           return;
         }
 
-        done();
+        if (iterator === 1) {
+          done();
+        }
       };
 
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.2 });
@@ -710,9 +713,6 @@ describe('broker queue & tree', () => {
         ]);
         should(header).eql(undefined);
         should(data).eql({ data : { label : 'bla' }});
-
-        should(queueObject.nbAcks).eql(0);
-        should(queueObject.nbExpectedAcks).eql(3);
 
         queueObject.ack('first_packet');
         done();
