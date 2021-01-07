@@ -745,7 +745,7 @@ describe('broker queue & tree', () => {
         iterator++;
       };
 
-      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, prefetch : 3, requeueInterval : 5 });
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 5 }, { prefetch : 3 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
       queueObject.addInQueue(1, { data : { label : 'bla_1' }});
@@ -786,7 +786,7 @@ describe('broker queue & tree', () => {
         messagesSent.push(data.data.label);
       };
 
-      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, prefetch : 3, requeueInterval : 5 });
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 5 }, { prefetch : 3 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
       queueObject.addClient(1, 'client-2', '123457', constants.LISTENER_TYPES.CONSUME);
 
@@ -836,7 +836,7 @@ describe('broker queue & tree', () => {
     });
 
     it('should validate the item before to push in the queue', () => {
-      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 }, { id : ['int'], label : ['string'] });
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 }, { map : { id : ['int'], label : ['string'] }});
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
       let res = queueObject.addInQueue(1, { data : { label : 'bla' }});
