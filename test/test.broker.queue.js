@@ -480,23 +480,23 @@ describe('broker queue & tree', () => {
       should(queueObject.queueSecondary[1]).eql([
         [
           1,
-          { data : { label : 'bla_0' } }
+          { data : { label : 'bla_5' } }
         ],
         [
           1,
-          { data : { label : 'bla_1' } }
+          { data : { label : 'bla_6' } }
         ],
         [
           1,
-          { data : { label : 'bla_2' } }
+          { data : { label : 'bla_7' } }
         ],
         [
           1,
-          { data : { label : 'bla_3' } }
+          { data : { label : 'bla_8' } }
         ],
         [
           1,
-          { data : { label : 'bla_4' } }
+          { data : { label : 'bla_9' } }
         ]
       ]);
     });
