@@ -534,7 +534,7 @@ describe('kitten-mq', () => {
                 'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
               ]
             }, () => {
-              _client1.listen('*', (err, cl) => {
+              _client1.listen('*', (err) => {
                 should(err).eql({ message : constants.ERRORS.BAD_ENPOINT_ALL });
 
                 _client1.disconnect(() => {
