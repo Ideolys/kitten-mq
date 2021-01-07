@@ -3511,7 +3511,7 @@ describe('kitten-mq', () => {
                       });
                     });
                   });
-                }, 3000);
+                }, 3500);
 
                 setTimeout(() => {
                   _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
@@ -3630,7 +3630,7 @@ describe('kitten-mq', () => {
                       });
                     });
                   });
-                }, 3000);
+                }, 3500);
 
                 setTimeout(() => {
                   _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
@@ -6612,6 +6612,85 @@ describe('kitten-mq', () => {
                   should(err).not.ok();
                 });
               }, 20);
+            });
+          });
+        });
+      });
+
+      it('should reload channel config', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _configBroker = JSON.parse(JSON.stringify(_configBroker1));
+        _configBroker.channels = {
+          'endpoint/1.0' : {
+            prefetch : 1
+          }
+        };
+
+        fs.writeFileSync(configBrokerRule, JSON.stringify(_configBroker));
+
+        let _broker1 = broker(configBrokerRule);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client1',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client2',
+              hosts         : [
+                'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+              ]
+            }, () => {
+              let _nbCalls = 0;
+              let acks     = [];
+              _client1.consume('endpoint/1.0/*', (err, message, ack, info) => {
+                _nbCalls++;
+                acks.push(ack);
+
+                if (_nbCalls === 3) {
+                  ack();
+                }
+              });
+
+              _configBroker.channels = {
+                'endpoint/1.0' : {
+                  prefetch : 2
+                }
+              };
+
+              fs.writeFileSync(configBrokerRule, JSON.stringify(_configBroker));
+
+              _broker1.reload();
+
+              _client2.send('endpoint/1.0/bla', { test : 'hello world' }, (err) => {
+                should(err).not.ok();
+              });
+              _client2.send('endpoint/1.0/bla', { test : 'hello world' }, (err) => {
+                should(err).not.ok();
+              });
+              _client2.send('endpoint/1.0/bla', { test : 'hello world' }, (err) => {
+                should(err).not.ok();
+              });
+
+              setTimeout(() => {
+                should(_nbCalls).eql(2);
+
+                acks.forEach(ack => ack());
+
+                _client2.disconnect(() => {
+                  _client1.disconnect(() => {
+                    _broker1.stop(done);
+                  })
+                });
+              }, 200);
             });
           });
         });

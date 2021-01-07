@@ -181,11 +181,12 @@ The broker must have a config file which defines client rights between channels
     }
   ],
 
-  // OPTIONAL: JSON Schema validation of channels
+  // OPTIONAL
   channels : [
     {
-      'easilys/v1' :{
-        map : {
+      'easilys/v1' : {
+        prefetch : 1 // number of unacknowledged messages
+        map      : {
           id : ['int'],
           ...
         }

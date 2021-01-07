@@ -1,8 +1,9 @@
 # Kitten mq
 
-### v0.8.6
+### v0.9.0
 *2020-XX-XX*
-  - Statistics "per_senconds" were not correct.
+  - Add option `prefetch` for channels, default is `1`. It determines the number of unacknowledged messages.
+  - Fix, Statistics "per_seconds" were not correct.
 
 ### v0.8.5
 *2020-12-09*
