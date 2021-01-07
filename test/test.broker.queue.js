@@ -507,7 +507,7 @@ describe('broker queue & tree', () => {
 
         should(clients).eql(['client-1#123456']);
         should(data).eql({ data : { label : 'bla' }});
-        should(header).eql(undefined);
+        should(header).have.keys('messageId');
       };
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
 
@@ -521,7 +521,7 @@ describe('broker queue & tree', () => {
         should(acks).be.an.Object();
 
         should(clients).eql(['client-1#123456']);
-        should(header).eql(undefined);
+        should(header).have.keys('messageId');
         should(data).eql({ data : { label : 'bla_' + i++ }});
       };
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
@@ -558,12 +558,13 @@ describe('broker queue & tree', () => {
       let handler = (acks, clients, data, header) => {
         should(acks).be.an.Object();
         should(clients).eql(['client-1#123456']);
-        should(header).eql(undefined);
+        should(header).have.keys('messageId');
         should(data).eql({ data : { label : 'bla_1' }});
 
-        acks['first_packet'] = { created : Date.now(), messageId : 'first_packet' };
+        acks[header.messageId].headers         = header;
+        acks[header.messageId].headers.created = Date.now()
 
-        queueObject.ack('first_packet');
+        queueObject.ack(header.messageId);
       };
 
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
@@ -582,13 +583,15 @@ describe('broker queue & tree', () => {
         should(clients).eql(['client-1#123456']);
         should(data).eql({ data : { label : 'bla_1' }});
 
-        if (!header) {
-          acks['first_packet'] = { created : Date.now(), messageId : 1 };
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers         = header;
+          acks[header.messageId].headers.created = Date.now()
         } else {
           should(header.nbRequeues).eql(++iterator);
         }
 
         if (iterator === 1) {
+          delete acks[header.messageId];
           done();
         }
       };
@@ -607,21 +610,23 @@ describe('broker queue & tree', () => {
       let handler  = (acks, clients, data, header) => {
         let time = null;
 
-        if (header) {
+        if (header.nbRequeues) {
           time = header.created + (2.2*1000);
         }
         should(acks).be.an.Object();
         should(clients).eql(['client-1#123456']);
         should(data).eql({ data : { label : 'bla_1' }});
 
-        if (!header) {
-          acks['first_packet'] = { created : Date.now(), messageId : 'first_packet'};
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers         = header;
+          acks[header.messageId].headers.created = Date.now();
         } else {
           should(header.nbRequeues).eql(++iterator);
           should(time).be.approximately(Date.now(), 1000);
         }
 
         if (iterator === 1) {
+          delete acks[header.messageId];
           done();
         }
       };
@@ -646,11 +651,12 @@ describe('broker queue & tree', () => {
 
         receivedLabels.push(data.data.label);
 
-        if (!header) {
-          acks[data.data.label] = { created : Date.now(), messageId : data.data.label };
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers         = header;
+          acks[header.messageId].headers.created = Date.now()
 
           if (!iterator && data.data.label === 'bla_2') {
-            queueObject.ack(data.data.label);
+            queueObject.ack(header.messageId);
             return;
           }
         } else {
@@ -681,10 +687,11 @@ describe('broker queue & tree', () => {
         should(clients).eql(['client-1#123456']);
         should(data).eql({ data : { label : 'bla_1' } });
 
-        if (!header) {
-          acks['first_packet'] = { created : Date.now(), messageId : 'first_packet' };
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers         = header;
+          acks[header.messageId].headers.created = Date.now()
 
-          queueObject.nack('first_packet');
+          queueObject.nack(header.messageId);
           iterator++;
           return;
         }
@@ -711,7 +718,7 @@ describe('broker queue & tree', () => {
           'client-2#123456',
           'client-3#123456'
         ]);
-        should(header).eql(undefined);
+        should(header).have.keys('messageId');
         should(data).eql({ data : { label : 'bla' }});
 
         queueObject.ack('first_packet');
@@ -736,10 +743,11 @@ describe('broker queue & tree', () => {
       let handler = (acks, clients, data, header) => {
         should(acks).be.an.Object();
         should(clients).eql(['client-1#123456']);
-        should(header).eql(undefined);
+        should(header).have.keys('messageId');
         should(data).eql({ data : { label : 'bla_' + (iterator + 1) }});
 
-        acks[data.data.label] = { created : Date.now(), messageId : data.label };
+        acks[header.messageId].headers         = header;
+        acks[header.messageId].headers.created = Date.now();
 
         messagesSent.push(data.data.label);
         iterator++;
@@ -756,7 +764,6 @@ describe('broker queue & tree', () => {
 
       setTimeout(() => {
         should(iterator).eql(3);
-        should(Object.keys(queueObject._acks)).eql(['bla_1', 'bla_2', 'bla_3']);
         should(messagesSent).eql(['bla_1', 'bla_2', 'bla_3']);
         done();
       }, 3000);
@@ -778,10 +785,11 @@ describe('broker queue & tree', () => {
         else {
           should(clients).eql(['client-1#123456']);
         }
-        should(header).eql(undefined);
+        should(header).have.keys('messageId');
         should(data).eql({ data : { label : 'bla_' + (iterator) }});
 
-        acks[data.data.label] = { created : Date.now(), messageId : data.label };
+        acks[header.messageId].headers         = header;
+        acks[header.messageId].headers.created = Date.now();
 
         messagesSent.push(data.data.label);
       };
@@ -798,12 +806,176 @@ describe('broker queue & tree', () => {
 
       setTimeout(() => {
         should(iterator).eql(3);
-        should(Object.keys(queueObject._acks)).eql(['bla_1', 'bla_2', 'bla_3']);
         should(messagesSent).eql(['bla_1', 'bla_2', 'bla_3']);
         done();
       }, 3000);
 
       should(queueObject.queue).have.lengthOf(2);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item if not acked with prefetch 2 : first item timeout', done => {
+      let iterator     = 0;
+      let messagesSent = [];
+
+      expectedLabels = ['bla_1', 'bla_2', 'bla_1'];
+
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(header).have.keys('messageId');
+        should(data).eql({ data : { label : expectedLabels[iterator] }});
+
+        acks[header.messageId].headers         = header;
+        acks[header.messageId].headers.created = Date.now();
+
+        messagesSent.push(data.data.label);
+        iterator++;
+
+        if (iterator === 2) {
+          queueObject.ack(header.messageId);
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.1, requeueLimit : 2 }, { prefetch : 2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+
+      setTimeout(() => {
+        should(iterator).eql(3);
+        should(messagesSent).eql(['bla_1', 'bla_2', 'bla_1']);
+        done();
+      }, 3000);
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item if not acked with prefetch 2 : last item timeout', done => {
+      let iterator     = 0;
+      let messagesSent = [];
+
+      expectedLabels = ['bla_1', 'bla_2', 'bla_2'];
+
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(header).have.keys('messageId');
+        should(data).eql({ data : { label : expectedLabels[iterator] }});
+
+        acks[header.messageId].headers         = header;
+        acks[header.messageId].headers.created = Date.now();
+
+        messagesSent.push(data.data.label);
+        iterator++;
+
+        if (iterator === 1) {
+          queueObject.ack(header.messageId);
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.1, requeueLimit : 2 }, { prefetch : 2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+
+      setTimeout(() => {
+        should(iterator).eql(3);
+        should(messagesSent).eql(['bla_1', 'bla_2', 'bla_2']);
+        done();
+      }, 3000);
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item if nacked with prefetch 2 : last item', done => {
+      let iterator     = 0;
+      let messagesSent = [];
+
+      expectedLabels = ['bla_1', 'bla_2', 'bla_2'];
+
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(header).have.keys('messageId');
+        should(data).eql({ data : { label : expectedLabels[iterator] }});
+
+        acks[header.messageId].headers         = header;
+        acks[header.messageId].headers.created = Date.now();
+
+        messagesSent.push(data.data.label);
+        iterator++;
+
+        if (iterator === 1) {
+          queueObject.ack(header.messageId);
+        }
+        if (iterator === 2) {
+          queueObject.nack(header.messageId);
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.1, requeueLimit : 2 }, { prefetch : 2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+
+      setTimeout(() => {
+        should(iterator).eql(3);
+        should(messagesSent).eql(['bla_1', 'bla_2', 'bla_2']);
+        done();
+      }, 3000);
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item if nacked with prefetch 2 : first item', done => {
+      let iterator     = 0;
+      let messagesSent = [];
+
+      expectedLabels = ['bla_1', 'bla_1', 'bla_2'];
+
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(header).have.keys('messageId');
+        //should(data).eql({ data : { label : expectedLabels[iterator] }});
+
+        acks[header.messageId].headers         = header;
+        acks[header.messageId].headers.created = Date.now();
+
+        messagesSent.push(data.data.label);
+        iterator++;
+
+        if (iterator === 1) {
+          queueObject.nack(header.messageId);
+        }
+        if (iterator === 2) {
+          queueObject.ack(header.messageId);
+        }
+        if (iterator === 3) {
+          queueObject.ack(header.messageId);
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.2, requeueLimit : 2 }, { prefetch : 2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+
+      setTimeout(() => {
+        should(iterator).eql(3);
+        should(messagesSent).eql(['bla_1', 'bla_1', 'bla_2']);
+        done();
+      }, 3000);
+
+      should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
     });
 
