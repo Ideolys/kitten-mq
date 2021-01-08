@@ -3643,6 +3643,63 @@ describe('kitten-mq', () => {
         });
       });
 
+      it('should resent message : nack with delay', done => {
+        let _client1 = client();
+        let _client2 = client();
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          _client1.connect({
+            clientId      : 'client_1',
+            keysDirectory : path.join(__dirname, 'keys'),
+            keysName      : 'client',
+            hosts         : [
+              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+            ]
+          }, () => {
+            _client2.connect({
+              clientId      : 'client_2',
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
+              ]
+            }, () => {
+              let firstTry = null;
+              _client1.consume('endpoint/1.0/test', (err, packet, ack, headers) => {
+                should(err).not.ok();
+                should(packet).eql({
+                  test : 'hello world'
+                });
+
+                if (!headers.nbRequeues) {
+                  firstTry = Date.now();
+                  ack(false, 1);
+                }
+                else {
+                  ack();
+                  should(Date.now()).be.aboveOrEqual(firstTry + 1000);
+                  should(_broker1._queues['endpoint/1.0'].queue).eql([]);
+                  should(_broker1._queues['endpoint/1.0'].queueRequeue).eql([]);
+                  _client1.disconnect(() => {
+                    _client2.disconnect(() => {
+                      _broker1.stop(done);
+                    });
+                  });
+                }
+              });
+
+              setTimeout(() => {
+                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
+                  should(err).not.ok();
+                });
+              }, 20);
+            });
+          });
+        });
+      });
+
     });
 
     describe('format', () => {

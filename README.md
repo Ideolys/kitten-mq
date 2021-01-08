@@ -114,6 +114,7 @@ and relaod configuration without restarting kitten-mq:
   mq.consume('endpoint/v1/120', (err, msg, done, info) => {
     console.log(msg);
     done(false); // requeue if false is passed
+    done(false, 1); // requeue with a delay of 1 second
   })
 
   // You can use wildcard to listen many channels, and aknowledge

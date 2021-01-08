@@ -4,6 +4,7 @@
 *2020-XX-XX*
   - Add option `prefetch` for channels, default is `1`. It determines the number of unacknowledged messages.
   - Breaking change: if the secondary queue is full, messages are removed from the head instead of the end.
+  - Add optional parameter `delay` for `ack` method of a consummer: `ack(false, delay)`.
   - Fix, Statistics "per_seconds" were not correct.
 
 ### v0.8.5

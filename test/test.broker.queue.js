@@ -710,6 +710,39 @@ describe('broker queue & tree', () => {
       should(queueObject.queueSecondary._nbMessages).eql(0);
     });
 
+    it('should resend item nacked by client with delay', done => {
+      let iterator = 0;
+
+      let handler  = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(data).eql({ data : { label : 'bla_1' } });
+
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers         = header;
+          acks[header.messageId].headers.created = Date.now();
+
+          queueObject.nack(header.messageId, 1);
+          iterator++;
+          return;
+        }
+
+        if (iterator === 1) {
+          should(Date.now()).be.aboveOrEqual(header.created + 1000);
+          should(queueObject.queueRequeue.length).eql(0);
+          done();
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
     it('should send one item to multiple clients (3)', done => {
       let handler  = (acks, clients, data, header) => {
         should(acks).be.an.Object();
@@ -974,6 +1007,145 @@ describe('broker queue & tree', () => {
         should(messagesSent).eql(['bla_1', 'bla_1', 'bla_2']);
         done();
       }, 3000);
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item if nacked with prefetch 2 and delay: last item', done => {
+      let iterator     = 0;
+      let messagesSent = [];
+
+      expectedLabels = ['bla_1', 'bla_2', 'bla_2'];
+
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(header).have.keys('messageId');
+        should(data).eql({ data : { label : expectedLabels[iterator] }});
+
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers         = header;
+          acks[header.messageId].headers.created = Date.now();
+        }
+
+        messagesSent.push(data.data.label);
+        iterator++;
+
+        if (iterator === 1) {
+          queueObject.ack(header.messageId);
+        }
+        if (iterator === 2) {
+          queueObject.nack(header.messageId, 1);
+        }
+
+        if (iterator === 3) {
+          should(Date.now()).be.aboveOrEqual(header.created + 1000);
+          should(queueObject.queueRequeue.length).eql(0);
+          done();
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.1, requeueLimit : 2 }, { prefetch : 2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend item if nacked with prefetch 2 : first item', done => {
+      let iterator     = 0;
+      let messagesSent = [];
+
+      expectedLabels = ['bla_1', 'bla_2', 'bla_1'];
+
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(header).have.keys('messageId');
+        should(data).eql({ data : { label : expectedLabels[iterator] }});
+
+        acks[header.messageId].headers = header;
+
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers.created = Date.now();
+        }
+
+        messagesSent.push(data.data.label);
+        iterator++;
+
+        if (iterator === 1) {
+          queueObject.nack(header.messageId, 1);
+        }
+        if (iterator === 2) {
+          queueObject.ack(header.messageId);
+        }
+        if (iterator === 3) {
+          queueObject.ack(header.messageId);
+          should(queueObject.queueRequeue.length).eql(0);
+          should(Date.now()).be.aboveOrEqual(header.created + 1000);
+          done();
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.2, requeueLimit : 2 }, { prefetch : 2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(0);
+    });
+
+    it('should resend items if nacked with prefetch 2', done => {
+      let iterator     = 0;
+      let messagesSent = [];
+
+      expectedLabels = ['bla_1', 'bla_2', 'bla_1', 'bla_2'];
+
+      let handler = (acks, clients, data, header) => {
+        should(acks).be.an.Object();
+        should(clients).eql(['client-1#123456']);
+        should(header).have.keys('messageId');
+        should(data).eql({ data : { label : expectedLabels[iterator] }});
+
+        acks[header.messageId].headers = header;
+
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers.created = Date.now();
+        }
+
+        messagesSent.push(data.data.label);
+        iterator++;
+
+        if (iterator === 1) {
+          queueObject.nack(header.messageId, 1);
+        }
+        else if (iterator === 2) {
+          queueObject.nack(header.messageId, 1);
+        }
+        else if (iterator === 3) {
+          queueObject.ack(header.messageId);
+          should(queueObject.queueRequeue.length).eql(0);
+          should(Date.now()).be.aboveOrEqual(header.created + 1000);
+        }
+        else if (iterator === 4) {
+          queueObject.ack(header.messageId);
+          should(queueObject.queueRequeue.length).eql(0);
+          should(Date.now()).be.aboveOrEqual(header.created + 1000);
+          done();
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.2, requeueLimit : 2 }, { prefetch : 2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
