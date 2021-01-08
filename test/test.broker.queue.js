@@ -457,12 +457,8 @@ describe('broker queue & tree', () => {
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(1);
-      should(queueObject.queueSecondary[1]).eql([
-        [
-          1,
-          { data : { label : 'bla' } }
-        ]
-      ]);
+      should(queueObject.queueSecondary[1].length).eql(1);
+      should(queueObject.queueSecondary[1][0][1]).eql({ data : { label : 'bla' } });
     });
 
     it('should drop messages if limit is reached', () => {
@@ -477,28 +473,64 @@ describe('broker queue & tree', () => {
       should(queueObject.queueSecondary._nbMessages).eql(5);
       should(queueObject.queueSecondary._nbMessagesReceived).eql(10);
       should(queueObject.queueSecondary._nbMessagesDropped).eql(5);
-      should(queueObject.queueSecondary[1]).eql([
-        [
-          1,
-          { data : { label : 'bla_5' } }
-        ],
-        [
-          1,
-          { data : { label : 'bla_6' } }
-        ],
-        [
-          1,
-          { data : { label : 'bla_7' } }
-        ],
-        [
-          1,
-          { data : { label : 'bla_8' } }
-        ],
-        [
-          1,
-          { data : { label : 'bla_9' } }
-        ]
-      ]);
+      should(queueObject.queueSecondary[1].length).eql(5);
+      should(queueObject.queueSecondary[1][0][1]).eql({ data : { label : 'bla_5' } });
+      should(queueObject.queueSecondary[1][1][1]).eql({ data : { label : 'bla_6' } });
+      should(queueObject.queueSecondary[1][2][1]).eql({ data : { label : 'bla_7' } });
+      should(queueObject.queueSecondary[1][3][1]).eql({ data : { label : 'bla_8' } });
+      should(queueObject.queueSecondary[1][4][1]).eql({ data : { label : 'bla_9' } });
+    });
+
+    it('should drop messages if ttl is reached', () => {
+      let queueObject = queue('endpoint/v1', () => {}, {}, { ttl : .5 });
+
+      for (let i = 0; i < 10; i++) {
+        queueObject.addInQueue(1, { data : { label : 'bla_' + i }});
+      }
+
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(10);
+      should(queueObject.queueSecondary._nbMessagesReceived).eql(10);
+      should(queueObject.queueSecondary._nbMessagesDropped).eql(0);
+      should(queueObject.queueSecondary[1].length).eql(10);
+
+      setTimeout(() => {
+        should(queueObject.queue).have.lengthOf(0);
+        should(queueObject.queueSecondary._nbMessages).eql(10);
+        should(queueObject.queueSecondary._nbMessagesReceived).eql(10);
+        should(queueObject.queueSecondary._nbMessagesDropped).eql(10);
+        should(queueObject.queueSecondary[1].length).eql(0);
+      }, 1000);
+    });
+
+    it('should drop messages if ttl is reached : multiple ids', () => {
+      let queueObject = queue('endpoint/v1', () => {}, {}, { ttl : .5 });
+
+      for (let i = 0; i < 10; i++) {
+        queueObject.addInQueue(1, { data : { label : 'bla_' + i }});
+
+        if (i % 2) {
+          queueObject.addInQueue(2, { data : { label : 'bla_' + i }});
+        }
+      }
+
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueSecondary._nbMessages).eql(15);
+      should(queueObject.queueSecondary._nbMessagesReceived).eql(15);
+      should(queueObject.queueSecondary._nbMessagesDropped).eql(0);
+      should(queueObject.queueSecondary[1].length).eql(10);
+      should(queueObject.queueSecondary[2].length).eql(5);
+
+      setTimeout(() => {
+        should(queueObject.queue).have.lengthOf(0);
+        should(queueObject.queueSecondary._nbMessages).eql(15);
+        should(queueObject.queueSecondary._nbMessagesReceived).eql(15);
+        should(queueObject.queueSecondary._nbMessagesDropped).eql(15);
+        should(queueObject.queueSecondary[1].length).eql(0);
+        should(queueObject.queueSecondary[2].length).eql(0);
+      }, 1000);
     });
 
     it('should add an item in the waiting queue and process it when client is registering', () => {
@@ -542,16 +574,9 @@ describe('broker queue & tree', () => {
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(2);
       should(queueObject.queueSecondary).keys(1);
-      should(queueObject.queueSecondary[1]).eql([
-        [
-          1,
-          { data : { label : 'bla_1' }}
-        ],
-        [
-          1,
-          { data : { label : 'bla_2' }}
-        ]
-      ]);
+      should(queueObject.queueSecondary[1].length).eql(2);
+      should(queueObject.queueSecondary[1][0][1]).eql({ data : { label : 'bla_1' } });
+      should(queueObject.queueSecondary[1][1][1]).eql({ data : { label : 'bla_2' } });
     });
 
     it('should send one item to one client', () => {

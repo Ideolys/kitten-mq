@@ -186,7 +186,8 @@ The broker must have a config file which defines client rights between channels
   channels : [
     {
       'easilys/v1' : {
-        prefetch : 1 // number of unacknowledged messages
+        prefetch : 1 // @optional number of unacknowledged messages @default 1
+        ttl      : 1 // @optional time to live (in second) for messages in queue @default no ttl
         map      : {
           id : ['int'],
           ...
