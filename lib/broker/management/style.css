@@ -2,7 +2,6 @@ html, body, div, span, h1, h2, h3, h4, h5, h6, p, a, ul {
   margin: 0;
   padding: 0;
   border: 0;
-  font-size: 12px;
   font: inherit;
   vertical-align: baseline;
 }
@@ -11,6 +10,7 @@ html {
   background: #f8f9fa;
   font-family: 'Roboto', sans-serif;
   color: #111;
+  font-size: 14px;
 }
 
 h1 {
@@ -94,7 +94,6 @@ nav {
   position: absolute;
   z-index: 1;
   top: 150%;
-  left: 50%;
   margin-left: -60px;
 }
 
