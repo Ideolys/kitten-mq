@@ -6,7 +6,13 @@
   - Add option `ttl` for channels (broker configuration), add a time to live for messages in queue.
   - Breaking change: if the secondary queue is full, messages are removed from the head instead of the end.
   - Add optional parameter `delay` for `ack` method of a consummer: `ack(false, delay)`.
+  - Improve UI:
+    + Add stats per queue
+    + Add config display
+    + Add first 10 items display
+    + Add broker's uptime
   - Fix, Statistics "per_seconds" were not correct.
+  - Fix, Stats were only availbale for one queue.
 
 ### v0.8.5
 *2020-12-09*
