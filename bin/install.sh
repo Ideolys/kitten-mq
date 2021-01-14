@@ -12,6 +12,13 @@ PACKAGE_VERSION=$(
 
 echo "... found version ${PACKAGE_VERSION}"
 
+if [ -f 'build.tar.gz' ]
+then
+  echo "Found old binary"
+  sudo rm build.tar.gz
+  echo "Old binary deleted"
+fi
+
 curl -LJOs https://github.com/Ideolys/kitten-mq/releases/download/v${PACKAGE_VERSION}/build.tar.gz
 echo "Get binary...OK"
 
