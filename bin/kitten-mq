@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-const broker   = require('../lib/broker/index');
-const path     = require('path')
-const fs       = require('fs');
-const { exit } = require('process');
-const exec     = require('child_process').exec;
+const broker = require('../lib/broker/index');
+const path   = require('path')
+const fs     = require('fs');
+const exec   = require('child_process').exec;
 
 const _path   = process.cwd();
 const pidPath = path.join(_path, 'pid');

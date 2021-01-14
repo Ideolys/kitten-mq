@@ -13,6 +13,7 @@
     + Add broker's uptime
   - Fix, Statistics "per_seconds" were not correct.
   - Fix, Stats were only availbale for one queue.
+  - Fix, reload command was not doing anything.
 
 ### v0.8.5
 *2020-12-09*
