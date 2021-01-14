@@ -1,7 +1,7 @@
 # Kitten mq
 
 ### v0.9.0
-*2020-XX-XX*
+*2021-01-14*
   - Add option `prefetch` for channels (broker configuration), default is `1`. It determines the number of unacknowledged messages.
   - Add option `ttl` for channels (broker configuration), add a time to live for messages in queue.
   - Breaking change: if the secondary queue is full, messages are removed from the head instead of the end.
