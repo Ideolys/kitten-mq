@@ -12,6 +12,13 @@ PACKAGE_VERSION=$(
 
 echo "... found version ${PACKAGE_VERSION}"
 
+if [ -f 'build.tar.gz' ]
+then
+  echo "Found old binary"
+  sudo rm build.tar.gz
+  echo "Old binary deleted"
+fi
+
 curl -LJOs https://github.com/Ideolys/kitten-mq/releases/download/v${PACKAGE_VERSION}/build.tar.gz
 echo "Get binary...OK"
 
@@ -26,7 +33,7 @@ then
 fi
 
 sudo -u kitten-mq tar -xzf build.tar.gz -C /var/www/kitten-mq
-sudo -u kitten-mq ln -s /var/www/kitten-mq/sharp/build/Release/kitten-mq /var/www/kitten-mq/kitten-mq
+sudo -u kitten-mq ln -sf /var/www/kitten-mq/sharp/build/Release/kitten-mq /var/www/kitten-mq/kitten-mq
 
 echo "Register service..."
 curl -s https://raw.githubusercontent.com/Ideolys/kitten-mq/v${PACKAGE_VERSION}/bin/systemd > /etc/systemd/system/kitten-mq.service

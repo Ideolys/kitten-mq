@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.10.0
+*2021-XX-XX*
+  - Add command `soft-stop` to gracefully shutdown the broker.
+
 ### v0.9.0
 *2021-01-14*
   - Add option `prefetch` for channels (broker configuration), default is `1`. It determines the number of unacknowledged messages.
@@ -13,6 +17,7 @@
     + Add broker's uptime
   - Fix, Statistics "per_seconds" were not correct.
   - Fix, Stats were only availbale for one queue.
+  - Fix, reload command was not doing anything.
 
 ### v0.8.5
 *2020-12-09*
