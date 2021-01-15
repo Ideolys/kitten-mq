@@ -1,7 +1,7 @@
 # Kitten mq
 
 ### v0.10.0
-*2021-XX-XX*
+*2021-01-15*
   - Add command `soft-stop` to gracefully shutdown the broker.
 
 ### v0.9.0
