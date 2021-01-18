@@ -453,7 +453,7 @@ describe('broker queue & tree', () => {
     it('should add an item in the waiting queue if no one is listening', () => {
       let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 });
 
-      queueObject.addInQueue(1, { data : { label : 'bla' }});
+      queueObject.addInQueue(1, { data : { label : 'bla' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(1);
@@ -465,7 +465,7 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 5 });
 
       for (let i = 0; i < 10; i++) {
-        queueObject.addInQueue(1, { data : { label : 'bla_' + i }});
+        queueObject.addInQueue(1, { data : { label : 'bla_' + i }}, Date.now());
       }
 
 
@@ -481,13 +481,12 @@ describe('broker queue & tree', () => {
       should(queueObject.queueSecondary[1][4][1]).eql({ data : { label : 'bla_9' } });
     });
 
-    it('should drop messages if ttl is reached', () => {
+    it('should drop messages if ttl is reached', done => {
       let queueObject = queue('endpoint/v1', () => {}, {}, { ttl : .5 });
 
       for (let i = 0; i < 10; i++) {
-        queueObject.addInQueue(1, { data : { label : 'bla_' + i }});
+        queueObject.addInQueue(1, { data : { label : 'bla_' + i }}, Date.now());
       }
-
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(10);
@@ -501,17 +500,18 @@ describe('broker queue & tree', () => {
         should(queueObject.queueSecondary._nbMessagesReceived).eql(10);
         should(queueObject.queueSecondary._nbMessagesDropped).eql(10);
         should(queueObject.queueSecondary[1].length).eql(0);
+        done();
       }, 1000);
     });
 
-    it('should drop messages if ttl is reached : multiple ids', () => {
+    it('should drop messages if ttl is reached : multiple ids', done => {
       let queueObject = queue('endpoint/v1', () => {}, {}, { ttl : .5 });
 
       for (let i = 0; i < 10; i++) {
-        queueObject.addInQueue(1, { data : { label : 'bla_' + i }});
+        queueObject.addInQueue(1, { data : { label : 'bla_' + i }}, Date.now());
 
         if (i % 2) {
-          queueObject.addInQueue(2, { data : { label : 'bla_' + i }});
+          queueObject.addInQueue(2, { data : { label : 'bla_' + i }}, Date.now());
         }
       }
 
@@ -530,24 +530,26 @@ describe('broker queue & tree', () => {
         should(queueObject.queueSecondary._nbMessagesDropped).eql(15);
         should(queueObject.queueSecondary[1].length).eql(0);
         should(queueObject.queueSecondary[2].length).eql(0);
+        done();
       }, 1000);
     });
 
-    it('should add an item in the waiting queue and process it when client is registering', () => {
+    it('should add an item in the waiting queue and process it when client is registering', done => {
       let handler = (acks, clients, data, header) => {
         should(acks).be.an.Object();
 
         should(clients).eql(['client-1#123456']);
         should(data).eql({ data : { label : 'bla' }});
         should(header).have.keys('messageId');
+        done();
       };
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
 
-      queueObject.addInQueue(1, { data : { label : 'bla' }});
+      queueObject.addInQueue(1, { data : { label : 'bla' }}, Date.now());
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
     });
 
-    it('should add items in the waiting queue and process them when client is registering', () => {
+    it('should add items in the waiting queue and process them when client is registering', done => {
       let i       = 1;
       let handler = (acks, clients, data, header) => {
         should(acks).be.an.Object();
@@ -555,19 +557,20 @@ describe('broker queue & tree', () => {
         should(clients).eql(['client-1#123456']);
         should(header).have.keys('messageId');
         should(data).eql({ data : { label : 'bla_' + i++ }});
+        done();
       };
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
     });
 
     it('should not process items that belongs to another id', () => {
       let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 });
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
 
       queueObject.addClient(2, 'client-2', '987654', constants.LISTENER_TYPES.CONSUME);
 
@@ -595,7 +598,7 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -624,7 +627,7 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.5 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -659,7 +662,7 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -697,8 +700,8 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.5 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(1);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -729,7 +732,7 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(1);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -762,7 +765,7 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -788,7 +791,7 @@ describe('broker queue & tree', () => {
       queueObject.addClient(1, 'client-2', '123456', constants.LISTENER_TYPES.LISTEN);
       queueObject.addClient(1, 'client-3', '123456', constants.LISTENER_TYPES.LISTEN);
 
-      queueObject.addInQueue(1, { data : { label : 'bla' }});
+      queueObject.addInQueue(1, { data : { label : 'bla' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -814,11 +817,11 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 5 }, { prefetch : 3 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_3' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_4' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_5' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_3' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_4' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_5' }}, Date.now());
 
       setTimeout(() => {
         should(iterator).eql(3);
@@ -856,11 +859,11 @@ describe('broker queue & tree', () => {
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
       queueObject.addClient(1, 'client-2', '123457', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_3' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_4' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_5' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_3' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_4' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_5' }}, Date.now());
 
       setTimeout(() => {
         should(iterator).eql(3);
@@ -898,8 +901,8 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.1, requeueLimit : 2 }, { prefetch : 2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
 
       setTimeout(() => {
         should(iterator).eql(3);
@@ -937,8 +940,8 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.1, requeueLimit : 2 }, { prefetch : 2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
 
       setTimeout(() => {
         should(iterator).eql(3);
@@ -979,8 +982,8 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.1, requeueLimit : 2 }, { prefetch : 2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
 
       setTimeout(() => {
         should(iterator).eql(3);
@@ -1024,8 +1027,8 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.2, requeueLimit : 2 }, { prefetch : 2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
 
       setTimeout(() => {
         should(iterator).eql(3);
@@ -1074,8 +1077,8 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.1, requeueLimit : 2 }, { prefetch : 2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -1119,8 +1122,8 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.2, requeueLimit : 2 }, { prefetch : 2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -1169,8 +1172,8 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueInterval : 0.2, requeueLimit : 2 }, { prefetch : 2 });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      queueObject.addInQueue(1, { data : { label : 'bla_1' }});
-      queueObject.addInQueue(1, { data : { label : 'bla_2' }});
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, Date.now());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -1180,7 +1183,7 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 }, { id : ['int'], label : ['string'] });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      let res = queueObject.addInQueue(1, {});
+      let res = queueObject.addInQueue(1, {}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -1194,7 +1197,7 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 }, { id : ['int'], label : ['string'] });
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      let res = queueObject.addInQueue(1, { data : null });
+      let res = queueObject.addInQueue(1, { data : null }, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
@@ -1208,7 +1211,7 @@ describe('broker queue & tree', () => {
       let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 }, { map : { id : ['int'], label : ['string'] }});
       queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
 
-      let res = queueObject.addInQueue(1, { data : { label : 'bla' }});
+      let res = queueObject.addInQueue(1, { data : { label : 'bla' }}, Date.now());
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(0);
