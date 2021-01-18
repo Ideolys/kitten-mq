@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.10.1
+*2021-01-18*
+  - Brokers share the same message ids.
+
 ### v0.10.0
 *2021-01-15*
   - Add command `soft-stop` to gracefully shutdown the broker.
