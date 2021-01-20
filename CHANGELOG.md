@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.10.2
+*2021-01-20*
+  - Remove chars from statistics (`GET /statistics`) in order to be compliant with promotheus.
+
 ### v0.10.1
 *2021-01-18*
   - Brokers share the same message ids.
