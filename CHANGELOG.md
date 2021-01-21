@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.10.3
+*2021-xx-xx*
+ - Verify channel argument of methods `client.consume` and `client.listen`.
+
 ### v0.10.2
 *2021-01-20*
   - Remove chars from statistics (`GET /statistics`) in order to be compliant with promotheus.
