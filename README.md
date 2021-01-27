@@ -244,3 +244,26 @@ consumer will receive the message among other
 ### Reload the broker configuration
 
 To reload the broker configuration: `kitten-mq reload`.
+
+## How it works (broker) ?
+
+### Publish
+
+Kitten-mq broker is designed to work with several brokers.
+
+A Kitten-mq client broadcasts a message to all brokers. Then, only one broker (master) is in charge of pushing the message to the corresponding listeners and/or consumers.
+When the message reached the consumer / listener, it will broadcast to the brokers an acknowledge.
+
+![gif](./doc/kitten_mq_publish.gif)
+
+### Update a master broker
+
+First, use the command `soft-stop` to gracefully shutdown the master broker.
+
+Second, update the configuration of the other broker to define as master.
+
+Third, reload the configuration. The messages will start to be pushed to consumers and/or listeners.
+
+![gif](./doc/kitten_mq_update.gif)
+
+Finally, you can update the old master broker and restart it.
