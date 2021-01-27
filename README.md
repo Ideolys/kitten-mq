@@ -260,10 +260,10 @@ When the message reached the consumer / listener, it will broadcast to the broke
 
 First, use the command `soft-stop` to gracefully shutdown the master broker.
 
-Second, update the configuration of the other broker to define as master.
+Second, update the configuration of a second broker to define it as master.
 
 Third, reload the configuration. The messages will start to be pushed to consumers and/or listeners.
 
 ![gif](./doc/kitten_mq_update.gif)
 
-Finally, you can update the old master broker and restart it.
+Finally, you can update the old master broker and restart it. Be sure to not defined it as master.
