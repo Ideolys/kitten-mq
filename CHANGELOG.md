@@ -1,8 +1,9 @@
 # Kitten mq
 
 ### v0.10.3
-*2021-xx-xx*
- - Verify channel argument of methods `client.consume` and `client.listen`.
+*2021-01-29*
+  - Verify channel argument of methods `client.consume` and `client.listen`.
+  - Fix old client acking.
 
 ### v0.10.2
 *2021-01-20*
