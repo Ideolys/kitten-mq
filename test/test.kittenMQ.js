@@ -241,9 +241,12 @@ describe('kitten-mq', () => {
 
               setTimeout(() => {
                 should(_broker1._queues['endpoint/1.0'].currentItem).eql(undefined);
-                should(_broker1._queues['endpoint/1.0'].currentItem).eql(undefined);
                 should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
                 should(_broker1._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
+
+                should(_broker2._queues['endpoint/1.0'].currentItem).eql(undefined);
+                should(_broker2._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
+                should(_broker2._queues['endpoint/1.0'].queueSecondary._nbMessages).eql(0);
                 should(_nbCalls).eql(1);
 
                 _client1.disconnect(() => {
