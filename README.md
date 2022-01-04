@@ -165,6 +165,8 @@ The broker must have a config file which defines client rights between channels
   requeueInterval : 100   // requeue interval in seconds
 
   // OPTIONAL: Rights management of channels
+  // - No rules: clients are able to read & write for all queues
+  // - One or more rule: clients are restricted to read/write in specified queues
   rules    : [
     {
       client        : 'easilys-*',                         // if * is used, it auto accepts new clients which match this client name (only easilys is concerned)
