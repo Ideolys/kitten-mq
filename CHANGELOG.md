@@ -2,7 +2,9 @@
 
 ### v0.10.5
 *2022-XX-XX*
-  - Fix rights management for writes. When two rules were defined on the same queue with one with a fixed version and another one with a generic version, the generic version was always not allowed to write.
+  - Fix rights management:
+    + when two rules were defined on the same queue with one with a fixed version and another one with a generic version, the generic version was always not allowed to write.
+    + when two rules were defined on the same queue with one with a fixed id and another one with a generic id, the generic version was always not allowed to write.
 
 ### v0.10.4
 *2021-02-25*

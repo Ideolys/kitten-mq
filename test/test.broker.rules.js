@@ -224,4 +224,76 @@ describe('Broker rules', () => {
     should(rulesInstance.isAllowed('other', '123456789', channel, false)).eql(false);
   });
 
+  it('should instanciate write rules (queue/version/*) & multiple clients with * in clients', () => {
+    const rulesInstance = rules([
+      {
+        client : 'client-*',
+        write  : ['queue/v1/1']
+      },
+      {
+        client : 'other-with-version',
+        write  : ['queue/v1/*']
+      },
+      {
+        client : 'other',
+        write  : ['queue/*']
+      }
+    ]);
+
+    let channel = {
+      endpoint : 'queue',
+      version  : '*',
+      id       : '*'
+    };
+
+    should(rulesInstance.isAllowed('client-1', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('client-2', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('other-with-version', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('other', '123456789', channel, false)).eql(true);
+
+    channel = {
+      endpoint : 'queue',
+      version  : 'v1',
+      id       : '*'
+    };
+
+    should(rulesInstance.isAllowed('client-1', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('client-2', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('other-with-version', '123456789', channel, false)).eql(true);
+    should(rulesInstance.isAllowed('other', '123456789', channel, false)).eql(true);
+
+    channel = {
+      endpoint : 'queue',
+      version  : 'v1',
+      id       : '1'
+    };
+
+    should(rulesInstance.isAllowed('client-1', '123456789', channel, false)).eql(true);
+    should(rulesInstance.isAllowed('client-2', '123456789', channel, false)).eql(true);
+    should(rulesInstance.isAllowed('other-with-version', '123456789', channel, false)).eql(true);
+    should(rulesInstance.isAllowed('other', '123456789', channel, false)).eql(true);
+
+    channel = {
+      endpoint : 'queue',
+      version  : 'v1',
+      id       : '2'
+    };
+
+    should(rulesInstance.isAllowed('client-1', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('client-2', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('other-with-version', '123456789', channel, false)).eql(true);
+    should(rulesInstance.isAllowed('other', '123456789', channel, false)).eql(true);
+
+    channel = {
+      endpoint : 'queue-other',
+      version  : 'v1',
+      id       : '1'
+    };
+
+    should(rulesInstance.isAllowed('client-1', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('client-2', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('other-with-version', '123456789', channel, false)).eql(false);
+    should(rulesInstance.isAllowed('other', '123456789', channel, false)).eql(false);
+  });
+
 });
