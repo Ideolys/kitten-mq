@@ -1,7 +1,7 @@
 # Kitten mq
 
 ### v0.10.5
-*2022-XX-XX*
+*2022-01-11*
   - Refactoring of rights management to fix various bugs.
 
 ### v0.10.4
