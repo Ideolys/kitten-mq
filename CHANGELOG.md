@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.10.6
+*2022-04-22*
+  - Don't start average stats' calculations timers until an http server is started.
+
 ### v0.10.5
 *2022-01-11*
   - Refactoring of rights management to fix various bugs.
