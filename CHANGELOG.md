@@ -1,5 +1,13 @@
 # Kitten mq
 
+### v0.11.0
+*2022-06-28*
+  - Update kitten-socket dependency.
+  - Correct package.json
+    + Set correct npm reporsitory
+    + Set correct git repository
+    + Add build script
+
 ### v0.10.6
 *2022-04-22*
   - Don't start average stats' calculations timers until an http server is started.
