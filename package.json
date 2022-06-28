@@ -1,17 +1,18 @@
 {
   "name": "kitten-mq",
-  "version": "0.10.5",
+  "version": "0.11.0",
   "description": "message queue system",
   "main": "index.js",
   "bin": {
     "kitten-mq": "./bin/kitten-mq"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha test/test.* -w -t 6000"
+    "test": "./node_modules/.bin/mocha test/test.* -w -t 6000",
+    "build": "pkg -t node12-linux-x64 --out-path ./build ."
   },
   "repository": {
     "type": "git",
-    "url": "git@git.ideolys.com:ideolys/kitten-mq.git"
+    "url": "git@github.com:Ideolys/kitten-mq.git"
   },
   "author": "",
   "license": "Apache-2.0",
