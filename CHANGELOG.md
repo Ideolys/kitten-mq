@@ -6,7 +6,6 @@
   - Correct package.json
     + Set correct npm reporsitory
     + Set correct git repository
-    + Add build script
 
 ### v0.10.6
 *2022-04-22*
