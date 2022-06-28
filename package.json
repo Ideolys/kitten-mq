@@ -25,6 +25,6 @@
     "should": "^13.2.3"
   },
   "publishConfig": {
-    "registry": "https://npm.ideolys.com"
+    "registry": "https://registry.npmjs.org/"
   }
 }
