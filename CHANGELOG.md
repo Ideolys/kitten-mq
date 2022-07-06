@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.11.1
+*2022-07-06*
+  - Fix: Previous version was not working due to missing comma.
+
 ### v0.11.0
 *2022-06-28*
   - Update kitten-socket dependency.
