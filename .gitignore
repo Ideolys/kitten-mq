@@ -40,10 +40,13 @@ npm-debug.log
 *.orig
 *.rej
 package-lock.json
-
+kitten-tester-*.pub
+keys/*
+pid
+socket
+logs/*
 
 ######## project-specific
-
 packets/
 test/keys/
 test/keys_broker_1/
