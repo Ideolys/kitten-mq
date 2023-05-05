@@ -1,42 +1,111 @@
 #!/usr/bin/env node
 const broker = require('../lib/broker/index');
+const cli    = require('../lib/cli');
 const path   = require('path')
 const fs     = require('fs');
 const exec   = require('child_process').exec;
+const cliff  = require("cliff");
+const os     = require('os');
 
-const _path   = process.cwd();
-const pidPath = path.join(_path, 'pid');
 
+const _path      = process.cwd();
+const pidPath    = path.join(_path, 'pid');
+const socketPath = path.join(_path, 'socket');
+const socketName = os.tmpdir() + '/kitten_mq_'  + fs.fstatSync(1).ino;
+
+const inspector = cliff.inspector({ stream: null,
+  styles: {               // Styles applied to stdout
+    all:     null,        // Overall style applied to everything
+    label:   'underline', // Inspection labels, like 'array' in `array: [1, 2, 3]`
+    other:   'inverted',  // Objects which don't have a literal representation, such as functions
+    key:     'grey',      // The keys in object literals, like 'a' in `{a: 1}`
+    special: 'grey',      // null, undefined...
+    number:  'cyan',      // 0, 1, 2...
+    bool:    'magenta',   // true false
+    string:  'green',     // 'a word'
+    regexp:  'green'      // /\d+/
+  },
+  pretty : false
+});
+
+const HELP = {
+  command : [
+    ['commande'.yellow  , 'options'.magenta                      , 'description'.grey],
+    ['start'.yellow     , '-c'.magenta                           , 'Start the server'.grey],
+    ['soft-stop'.yellow , ''                                     , 'Gracefully stop the server (deny new connections, deny new messages, process messages in queues)'.grey],
+    ['reload'.yellow    , ''                                     , 'Reload the broker configuration'.grey],
+    ['init-conf'.yellow , ''                                     , 'Init configuration'.grey],
+    ['list'.yellow      , '-q, -i, -m, -p, -r, -s, -prs'.magenta , 'List all active queues'.grey],
+    ['delete'.yellow    , '-q, -i, -p, -r, -s, -prs'.magenta     , 'Delete a queue'.grey],
+  ],
+  option : [
+    ['option'.magenta    , 'value'.green          , 'Description'.grey],
+    ['-c'.magenta        , '[path]'.green         , 'Path to config'.grey],
+    ['-q'.magenta        , '[Queue name]'.green   , 'Target a specific queue'.grey],
+    ['-i'.magenta        , '[channel name]'.green , 'Target a specific channal from a queue. Should be use with -q option (same as --channel)'.grey],
+    ['--channel'.magenta , '[channel name]'.green , 'Target a specific channal from a queue. Should be use with -q option (same as -i)'.grey],
+    ['-m'.magenta        , ''                     , 'Display message link to the queue'.grey],
+    ['-p'.magenta        , ''                     , 'List only queue from the primary queue'.grey],
+    ['-r'.magenta        , ''                     , 'List only queue from the primary reQueue'.grey],
+    ['-s'.magenta        , ''                     , 'List only queue from the secondary queue'.grey],
+    ['-prs'.magenta      , ''                     , 'List all queue. Is the default option if no other options sent (-p, -r, -s)'.grey],
+  ]
+};
+
+let _broker = null;
 let _config = 'kitten-mq.config.json';
 
 function printUsage () {
+
   console.log('kitten-mq CLI')
   console.log('===============================================');
-  console.group('Commands');
-  console.log('start', '\t', 'Start the server');
-  console.log('soft-stop', '\t', 'Gracefully stop the server (deny new connections, deny new messages, process messages in queues)');
-  console.log('reload', '\t', 'Reload the broker configuration');
-  console.log('init-conf', '\t', 'Init configuration');
-  console.log('-----------------------------------------------');
-  console.group('Options');
-  console.log('-c', '\t', 'Path to config');
-  console.groupEnd('Options');
+  cliff.putRows('info', HELP.command, ['yellow', 'magenta', 'grey']);
+  console.log('\n Available options')
+  console.log('===============================================');
+  cliff.putRows('info', HELP.option, ['magenta', 'green', 'grey']);
+
   process.exit();
 }
 
 let _args     = process.argv.slice(2);
-let _commands = ['start', 'reload', 'init-conf', 'soft-stop'];
+let _commands = ['start', 'reload', 'init-conf', 'soft-stop', 'list', 'delete'];
 
 if (_commands.indexOf(_args[0]) === -1) {
   return printUsage();
 }
+let options = {};
 
 let _argValues = {};
-
 for (let i = 0; i < _args.length; i++) {
   switch (_args[i]) {
     case '-c':
       _config = _args[i + 1];
+      i++;
+      break;
+    case '-q':
+      options.queue = _args[i + 1];
+      i++;
+      break;
+    case '-m':
+      options.includeMessage = true;
+      break;
+    case '-p':
+      options.onPrimary   = true;
+      break;
+    case '-r':
+      options.onRequeue   = true;
+      break;
+    case '-s':
+      options.onSecondary = true;
+      break;
+    case '-prs':
+      options.onPrimary   = true;
+      options.onRequeue   = true;
+      options.onSecondary = true;
+      break;
+    case '-i':
+    case '--channel':
+      options.channel = _args[i + 1];
       i++;
       break;
     default:
@@ -45,10 +114,16 @@ for (let i = 0; i < _args.length; i++) {
   }
 }
 
+// if no option past on a queue, considere it's for all queues
+if(!options.onPrimary &&  !options.onRequeue && !options.onSecondary) {
+  options.onPrimary   = true;
+  options.onRequeue   = true;
+  options.onSecondary = true;
+}
+
 if (Object.keys(_config).length === 0) {
   return console.error('No config found, you should provide a config with option "-c" as "-c /path/to/config.json"');
 }
-
 switch (_args[0]) {
   case 'start':
     start(_config);
@@ -62,6 +137,10 @@ switch (_args[0]) {
   case 'soft-stop':
     softStop();
     break;
+  case 'list':
+  case 'delete':
+    callAction(_args[0], options);
+    break;
 }
 
 /**
@@ -69,9 +148,10 @@ switch (_args[0]) {
  * @param {String} configPath
  */
 function start (configPath) {
-  let _broker = broker(configPath, true);
-  _broker.start(() => {
+  _broker = broker(configPath, true);
+  _broker.start({socketName},() => {
     fs.writeFileSync(pidPath, process.pid);
+    fs.writeFileSync(socketPath, socketName);
   });
 }
 
@@ -122,4 +202,184 @@ function initConfiguration () {
       process.exit();
     });
   })
+}
+
+/**
+ * Init the socket connexion with kitten-mq to be ready listenning message
+ * @param  {Function} callback [description]
+ * @return void
+ */
+function startClientSocket(callback) {
+  const socketName = fs.readFileSync(socketPath, 'utf8');
+  cli.connect(socketName, client => {
+    cli.setClient(client);
+    client.buffer        = '';
+    client.contentLength = null;
+    client.setEncoding('utf-8');
+    client.on('data', function(data) {
+      cli.onData(data, client);
+    });
+
+    client.on('message', function (message) {
+      if(!message || !message.action || message.error) {
+        const _error = message.error || 'Impossible to join server';
+        displayError(_error);
+        
+        return client.destroy();
+      }
+
+      switch (message.action) {
+        case 'list':
+          displayList(message.result, client);
+          break;
+        case 'delete':
+          client.destroy();
+          break;
+        default: displayError('An error occurred'); 
+      }
+      return client.destroy(); // kill client after server's response
+
+    });
+     
+    client.on('end', function(data) {
+      client.destroy();
+    });
+    callback(client);
+  })
+} 
+
+/**
+ * log error
+ * @param  {string} error 
+ * @return void
+ */
+function displayError(error) {
+  error = error || 'An error occurred';
+  cliff.logger.log('error', error);
+}
+
+/**
+ * log the answer
+ * @param  {array} data 
+ * @return void
+ */
+function displayList(data) {
+  let result = [];
+  const header = ['queue'.yellow, 'channel'.yellow, 'primary'.white, 'requeue'.white, 'secondary'.white, 'statistic'.magenta];
+  result.push(header);
+  // loop on queue
+  for (let i = 0; i < data.length; i++) {
+    let _data = [];
+    _data[0] = data[i].name.yellow;
+    _data[1] = '';
+    _data[2] = data[i].primary.count;
+    _data[3] = data[i].primary.countRequeue;
+    _data[4] = data[i].secondary.count;
+    _data[5] = JSON.stringify(data[i].stats).magenta;
+    
+    result.push(_data);
+
+    // loop on primary queue
+    let _tmp = {}; // to keep index of queue already count to inscrease it if a same channel is in different queue
+    for (let y = 0; y < data[i].primary.keys.length; y++) {
+      let _data = [];
+      _data[0] = '';
+      _data[1] = data[i].primary.keys[y].name.yellow;
+      _data[2] = data[i].primary.keys[y].count;
+      _data[3] = 0;
+      _data[4] = 0;
+      _data[5] = data[i].primary.keys[y].message;
+      
+      result.push(_data);
+      _tmp[data[i].primary.keys[y].name] = result.length -1;
+    }
+
+    // loop on primary reQueue
+    for (let y = 0; y < data[i].primary.keysRequeue.length; y++) {
+      if(_tmp[data[i].primary.keysRequeue[y].name]) { // if queue already count in primary, update it
+        result[_tmp[data[i].primary.keysRequeue[y].name]][3] = data[i].primary.keysRequeue[y].count;
+        result[_tmp[data[i].primary.keysRequeue[y].name]][5].push(...data[i].primary.keysRequeue[y].message);
+      } else {
+        let _data = [];
+        _data[0] = '';
+        _data[1] = data[i].primary.keysRequeue[y].name.yellow;
+        _data[2] = 0;
+        _data[3] = data[i].primary.keysRequeue[y].count;
+        _data[4] = 0;
+        _data[5] = data[i].primary.keysRequeue[y].message;
+        
+        result.push(_data);
+        _tmp[data[i].primary.keysRequeue[y].name] = result.length -1;
+      }
+    }
+
+    // loop on secondary queue
+    for (let y = 0; y < data[i].secondary.keys.length; y++) {
+      if(_tmp[data[i].secondary.keys[y].name]) { // if queue already count in primary, update it
+        result[_tmp[data[i].secondary.keys[y].name]][4] = data[i].secondary.keys[y].count;
+        result[_tmp[data[i].secondary.keys[y].name]][5].push(...data[i].secondary.keys[y].message);
+      } else {
+        let _data = [];
+        _data[0] = '';
+        _data[1] = data[i].secondary.keys[y].name.yellow;
+        _data[2] = 0;
+        _data[3] = 0;
+        _data[4] = data[i].secondary.keys[y].count;
+        _data[5] = data[i].secondary.keys[y].message;
+        
+        result.push(_data);
+      }
+    }
+
+  }
+
+  // add flag between each object to make a beatifull render line by line
+  for (var i = 1; i < result.length; i++) {
+    if(typeof result[i][5] === 'object') {
+      let _string = '';
+      for (var y = 0; y < result[i][5].length; y++) {
+        const obj = result[i][5][y];
+        _string +=  '###' + inspector(result[i][5][y]);
+      }
+      result[i][5] = '###' + result[i][1] + _string;
+    }
+  }
+  const formattedData = cliff.stringifyRows(result);
+  console.log('kitten-mq queues active');
+
+  const lines = formattedData.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    let _messages = lines[i].split('###');
+    // for each _messages lot it line by line
+    for (var y = 0; y < _messages.length; y++) {
+      if (y === 1) {
+        continue
+      }
+
+      if (y === 2) {
+        console.log('messages : '.magenta);
+      }
+      let newLine = _messages[y].trimEnd();
+
+      if(y > 1) {
+        newLine = 'data: '.white  + newLine;
+      }
+      console.log(newLine);
+      if(y ===  _messages.length-1 && y !== 0 && i < lines.length-1) {
+        console.log('--------------------------------------------------------------------------------------');
+      }
+    }
+  }
+}
+
+/**
+ * Send message to kitten-mq using socket
+ */
+function callAction (action, options) {
+  startClientSocket(function (client){
+    let data = { from : 'CLI', action : action, options : options };
+    cli.send(data);
+  });
+  
 }

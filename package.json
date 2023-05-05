@@ -16,6 +16,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "cliff": "^0.1.10",
     "find-my-way": "^3.0.5",
     "kitten-jwt": "1.0.0",
     "kitten-socket": "1.4.2"
