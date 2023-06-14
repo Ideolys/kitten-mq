@@ -90,18 +90,18 @@ for (let i = 0; i < _args.length; i++) {
       options.includeMessage = true;
       break;
     case '-p':
-      options.onPrimary   = true;
+      options.isPrimary   = true;
       break;
     case '-r':
-      options.onRequeue   = true;
+      options.isRequeue   = true;
       break;
     case '-s':
-      options.onSecondary = true;
+      options.isSecondary = true;
       break;
     case '-prs':
-      options.onPrimary   = true;
-      options.onRequeue   = true;
-      options.onSecondary = true;
+      options.isPrimary   = true;
+      options.isRequeue   = true;
+      options.isSecondary = true;
       break;
     case '-i':
     case '--channel':
@@ -115,10 +115,10 @@ for (let i = 0; i < _args.length; i++) {
 }
 
 // if no option past on a queue, considere it's for all queues
-if(!options.onPrimary &&  !options.onRequeue && !options.onSecondary) {
-  options.onPrimary   = true;
-  options.onRequeue   = true;
-  options.onSecondary = true;
+if(!options.isPrimary &&  !options.isRequeue && !options.isSecondary) {
+  options.isPrimary   = true;
+  options.isRequeue   = true;
+  options.isSecondary = true;
 }
 
 if (Object.keys(_config).length === 0) {
@@ -259,11 +259,12 @@ function displayError(error) {
 }
 
 /**
- * log the answer
+ * log the answer 
  * @param  {array} data 
  * @return void
  */
 function displayList(data) {
+  console.log('data',data);
   let result = [];
   const header = ['queue'.yellow, 'channel'.yellow, 'primary'.white, 'requeue'.white, 'secondary'.white, 'statistic'.magenta];
   result.push(header);
