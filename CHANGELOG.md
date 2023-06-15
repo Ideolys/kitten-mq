@@ -20,7 +20,7 @@
       - `-r`                       List only queue from the primary reQueue
       - `-s`                       List only queue from the secondary queue
       - `-prs`                     List all queue. Is the default option if no other options sent (-p, -r, -s)
-  - it now possible to empty a queue by calling `queue.empty(type, channel)`.
+  - it is now possible to empty a queue by calling `queue.empty(type, channel)`.
 
 ### v0.11.1
 *2022-07-06*
