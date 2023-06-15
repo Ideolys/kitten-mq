@@ -13,6 +13,13 @@ const pidPath    = path.join(_path, 'pid');
 const socketPath = path.join(_path, 'socket');
 const socketName = os.tmpdir() + '/kitten_mq_'  + fs.fstatSync(1).ino;
 
+const readline = require('readline')
+
+const readLineInterface = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
+
 const inspector = cliff.inspector({ stream: null,
   styles: {               // Styles applied to stdout
     all:     null,        // Overall style applied to everything
@@ -138,8 +145,21 @@ switch (_args[0]) {
     softStop();
     break;
   case 'list':
-  case 'delete':
     callAction(_args[0], options);
+    break;
+  case 'delete':
+    if(!options || !options.queue ) {
+      displayError('no queue available');
+      process.exit();
+    }
+    readLineInterface.question(`Are sure to delete this queue : ${options.queue} ${options.channel || ''} ? (Yes|y|No|n) : `, answer => {
+      // close the stream
+      readLineInterface.close()
+      if(answer.toLowerCase() === 'yes' || answer.toLowerCase() === 'y') {
+        cliff.logger.log('info', `Deleting ${options.queue} ${options.channel || ''} `);
+        callAction(_args[0], options);
+      }
+    });
     break;
 }
 
@@ -223,22 +243,20 @@ function startClientSocket(callback) {
     client.on('message', function (message) {
       if(!message || !message.action || message.error) {
         const _error = message.error || 'Impossible to join server';
-        displayError(_error);
-        
-        return client.destroy();
+        return displayError(_error, true);
       }
 
       switch (message.action) {
         case 'list':
-          displayList(message.result, client);
+          displayList(message.result);
           break;
         case 'delete':
-          displayMessage(message.result.message, client);
-          client.destroy();
+          displayMessage(message.result.message);
           break;
         default: displayError('An error occurred'); 
       }
-      return client.destroy(); // kill client after server's response
+
+      return closeSocket();
 
     });
      
@@ -252,19 +270,41 @@ function startClientSocket(callback) {
 /**
  * log error
  * @param  {string} error 
+ * @param  {socket} client 
  * @return void
  */
-function displayError(error) {
+function displayError(error, isClosingClient) {
   error = error || 'An error occurred';
   cliff.logger.log('error', error);
+  if(isClosingClient) {
+    closeSocket();
+  }
 }
 /**
  * log result message
  * @param  {string} message 
+ * @param  {socket} client 
  * @return void
  */
-function displayMessage(message = '') {
-  console.log(message);
+function displayMessage(message = '', isClosingClient) {
+  cliff.logger.log('info', message);
+  if(isClosingClient) {
+    closeSocket();
+  }
+}
+
+/**
+ * close socket connection
+ * @param  {socket} client 
+ * @return void
+ */
+function closeSocket() {
+  client = cli.getClient();
+  if(client) {
+    client.destroy();
+  }
+  process.exit();
+
 }
 
 /**
