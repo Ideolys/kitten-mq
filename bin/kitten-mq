@@ -233,6 +233,7 @@ function startClientSocket(callback) {
           displayList(message.result, client);
           break;
         case 'delete':
+          displayMessage(message.result.message, client);
           client.destroy();
           break;
         default: displayError('An error occurred'); 
@@ -257,6 +258,14 @@ function displayError(error) {
   error = error || 'An error occurred';
   cliff.logger.log('error', error);
 }
+/**
+ * log result message
+ * @param  {string} message 
+ * @return void
+ */
+function displayMessage(message = '') {
+  console.log(message);
+}
 
 /**
  * log the answer 
@@ -264,7 +273,6 @@ function displayError(error) {
  * @return void
  */
 function displayList(data) {
-  console.log('data',data);
   let result = [];
   const header = ['queue'.yellow, 'channel'.yellow, 'primary'.white, 'requeue'.white, 'secondary'.white, 'statistic'.magenta];
   result.push(header);
