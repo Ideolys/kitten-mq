@@ -1,7 +1,7 @@
 # Kitten mq
 
 ### v0.12.0
-*2023-xx-xx*
+*2023-06-26*
   - Add CLI to manage queue. You now should use more commands and options : 
     - Commands : 
       - `start`     -c                           Start the server
