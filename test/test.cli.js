@@ -30,7 +30,7 @@ const _configBroker1 = {
 
 let configBroker1 = path.join(__dirname, 'config-broker-1.json');
 
-describe.only('CLI', () => {
+describe('CLI', () => {
 
   before(done => {
     if (fs.existsSync(path.join(_configBroker1.keysDirectory, _configBroker1.keysName + '.pem'))) {
