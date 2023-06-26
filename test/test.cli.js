@@ -606,6 +606,7 @@ describe('CLI', () => {
             should(message.action).eql('list');
             should(message.result).eql([]);
             closeSocket();
+            _broker.stop();
             done();
 
           });
