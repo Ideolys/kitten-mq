@@ -462,13 +462,127 @@ describe('broker queue & tree', () => {
       should(queueObject.queueSecondary[1][0][1]).eql({ data : { label : 'bla' } });
     });
 
+    it('should empty primary queue', done => {
+
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, randU32Sync()); // in current process
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, randU32Sync()); // in queue
+      queueObject.addInQueue(1, { data : { label : 'bla_3' }}, randU32Sync()); // in queue
+      queueObject.addInQueue(1, { data : { label : 'bla_4' }}, randU32Sync()); // in queue
+      
+      should(queueObject.queue).have.lengthOf(3);
+      queueObject.empty('primary');
+      should(queueObject.queue).have.lengthOf(0);
+      done();
+
+    });
+
+    it('should empty primary queue, only for a specific channel', () => {
+
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10, requeueLimit : 2, requeueInterval : 0.2 });
+      queueObject.addClient('*', 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue('channel_1', { data : { label : 'bla_1' }}, randU32Sync()); // in current process
+      queueObject.addInQueue('channel_1', { data : { label : 'bla_2' }}, randU32Sync()); // in queue
+      queueObject.addInQueue('channel_1', { data : { label : 'bla_3' }}, randU32Sync()); // in queue
+      queueObject.addInQueue('channel_2', { data : { label : 'bla_4' }}, randU32Sync()); // in queue
+      queueObject.addInQueue('channel_2', { data : { label : 'bla_5' }}, randU32Sync()); // in queue
+      queueObject.addInQueue('channel_2', { data : { label : 'bla_6' }}, randU32Sync()); // in queue
+      should(queueObject.queue).have.lengthOf(5);
+      queueObject.empty('primary','channel_2');
+      should(queueObject.queue).have.lengthOf(2);
+      for (var i = 0; i < queueObject.queue.length; i++) {
+        should(queueObject.queue[i][0]).eql('channel_1');
+      }
+
+    });
+
+    it('should empty primary requeue', () => {
+      let iterator = 0;
+
+      let handler  = (acks, clients, data, header) => {
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers         = header;
+          acks[header.messageId].headers.created = Date.now()
+          queueObject.nack(header.messageId, 10);
+          iterator++;
+          return;
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 10, requeueInterval : 2 });
+      queueObject.addClient(1, 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+      queueObject.addInQueue(1, { data : { label : 'bla_1' }}, randU32Sync());
+      queueObject.addInQueue(1, { data : { label : 'bla_2' }}, randU32Sync());
+      queueObject.addInQueue(1, { data : { label : 'bla_3' }}, randU32Sync());
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueRequeue).have.lengthOf(3);
+
+      queueObject.empty('requeue');
+
+      should(queueObject.queueRequeue).have.lengthOf(0);
+
+    });
+
+    it('should empty primary requeue, only for a specific channel', () => {
+
+      let handler  = (acks, clients, data, header) => {
+        if (!header.nbRequeues) {
+          acks[header.messageId].headers         = header;
+          acks[header.messageId].headers.created = Date.now()
+          queueObject.nack(header.messageId, 10);
+          return;
+        }
+      };
+
+      let queueObject = queue('endpoint/v1', handler, { maxItemsInQueue : 10, requeueLimit : 10, requeueInterval : 2 });
+      queueObject.addClient('*', 'client-1', '123456', constants.LISTENER_TYPES.CONSUME);
+
+
+      queueObject.addInQueue('channel_1', { data : { label : 'bla_1' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_1', { data : { label : 'bla_2' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_1', { data : { label : 'bla_3' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_2', { data : { label : 'bla_4' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_2', { data : { label : 'bla_5' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_2', { data : { label : 'bla_6' }}, randU32Sync()); 
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueRequeue).have.lengthOf(6);
+
+      queueObject.empty('requeue', 'channel_2');
+
+      should(queueObject.queue).have.lengthOf(0);
+      should(queueObject.queueRequeue).have.lengthOf(3);
+
+    });
+
+    it('should empty secondary queue, only for a specific channel', () => {
+      let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 10 });
+
+      queueObject.addInQueue('channel_1', { data : { label : 'bla_1' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_1', { data : { label : 'bla_2' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_1', { data : { label : 'bla_3' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_2', { data : { label : 'bla_4' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_2', { data : { label : 'bla_5' }}, randU32Sync()); 
+      queueObject.addInQueue('channel_2', { data : { label : 'bla_6' }}, randU32Sync()); 
+
+      should(queueObject.queueSecondary['channel_1'].length).eql(3);
+      should(queueObject.queueSecondary['channel_2'].length).eql(3);
+      queueObject.empty('secondary', 'channel_2');
+      should(queueObject.queueSecondary['channel_1'].length).eql(3);
+      should(queueObject.queueSecondary['channel_2'].length).eql(0);
+    })
+
+
     it('should drop messages if limit is reached', () => {
       let queueObject = queue('endpoint/v1', () => {}, { maxItemsInQueue : 5 });
 
       for (let i = 0; i < 10; i++) {
         queueObject.addInQueue(1, { data : { label : 'bla_' + i }}, randU32Sync());
       }
-
 
       should(queueObject.queue).have.lengthOf(0);
       should(queueObject.queueSecondary._nbMessages).eql(5);

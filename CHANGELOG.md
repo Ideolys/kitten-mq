@@ -1,5 +1,27 @@
 # Kitten mq
 
+### v0.12.0
+*2023-xx-xx*
+  - Add CLI to manage queue. You now should use more commands and options : 
+    - Commands : 
+      - `start`     -c                           Start the server
+      - `soft-stop`                              Gracefully stop the server (deny new connections, deny new messages, process messages in queues)
+      - `reload`                                 Reload the broker configuration
+      - `init-conf`                              Init configuration
+      - `list`      -q, -i, -m, -p, -r, -s, -prs List all active queues
+      - `delete`    -q, -i, -p, -r, -s, -prs     Delete a queue
+    - Options : 
+      - `-c`        [path]         Path to config
+      - `-q`        [Queue name]   Target a specific queue
+      - `-i`        [channel name] Target a specific channal from a queue. Should be use with -q option (same as --channel)
+      - `--channel` [channel name] Target a specific channal from a queue. Should be use with -q option (same as -i)
+      - `-m`                       Display message link to the queue
+      - `-p`                       List only queue from the primary queue
+      - `-r`                       List only queue from the primary reQueue
+      - `-s`                       List only queue from the secondary queue
+      - `-prs`                     List all queue. Is the default option if no other options sent (-p, -r, -s)
+  - it is now possible to empty a queue by calling `queue.empty(type, channel)`.
+
 ### v0.11.1
 *2022-07-06*
   - Fix: Previous version was not working due to missing comma.

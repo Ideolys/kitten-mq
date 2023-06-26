@@ -217,6 +217,31 @@ kitten_mq_queue_messages_count                  | Number of messages added to a 
 kitten_mq_queue_messages_dropped_count          | Number of messages dropped by a queue
 kitten_mq_queue_messages_timeout_count          | Number of messages in timeout in a queue
 
+## CLI usage 
+
+To display the CLI helper
+
+`kitten-mq` or `kitten-mq -h`
+
+![cli usage](./doc/cli_usage.png)
+
+You can show the queues list :
+
+ `kitten-mq list`
+![cli queue list](./doc/cli_queue_list.png)
+
+You can target a specific queue list :
+
+`kitten-mq list -q easilys/v1`
+
+Or directly a specific channel for this queue :
+
+`kitten-mq list -q easilys/v1 --channel movement`.
+
+To display the list of messages, use the option `-m` : 
+![cli queue list message](./doc/cli_queue_list_message.png)
+
+To empty a queue, use the command line `kitten-mq delete`.
 
 ## Concepts to learn
 
