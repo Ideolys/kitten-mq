@@ -1,16 +1,21 @@
 # Kitten mq
 
+### v0.12.1
+*2023-09-29*
+  - Added an automatic retry on the declaration of client-side handlers when the connection to the broker has not yet been established
+  - A new function `isConnected()` is now exported from the client. This function returns the current connection state.
+
 ### v0.12.0
 *2023-06-26*
-  - Add CLI to manage queue. You now should use more commands and options : 
-    - Commands : 
+  - Add CLI to manage queue. You now should use more commands and options :
+    - Commands :
       - `start`     -c                           Start the server
       - `soft-stop`                              Gracefully stop the server (deny new connections, deny new messages, process messages in queues)
       - `reload`                                 Reload the broker configuration
       - `init-conf`                              Init configuration
       - `list`      -q, -i, -m, -p, -r, -s, -prs List all active queues
       - `delete`    -q, -i, -p, -r, -s, -prs     Delete a queue
-    - Options : 
+    - Options :
       - `-c`        [path]         Path to config
       - `-q`        [Queue name]   Target a specific queue
       - `-i`        [channel name] Target a specific channal from a queue. Should be use with -q option (same as --channel)
