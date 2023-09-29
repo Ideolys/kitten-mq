@@ -19,7 +19,7 @@
     "cliff": "^0.1.10",
     "find-my-way": "^3.0.5",
     "kitten-jwt": "1.0.0",
-    "kitten-socket": "1.4.2"
+    "kitten-socket": "1.4.4"
   },
   "devDependencies": {
     "mocha": "^6.0.2",
