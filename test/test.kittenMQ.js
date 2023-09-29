@@ -526,7 +526,6 @@ describe('kitten-mq', () => {
 
         // set consume handler before to connect
         _client1.listen('endpoint/1.0/test', (err, packet) => {
-          console.log('consume', err, packet);
           should(err).not.ok();
           should(packet).eql({
             test : 'hello world'
@@ -561,7 +560,6 @@ describe('kitten-mq', () => {
             }, () => {
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log('message sent', err);
                   should(err).not.ok();
                 });
               }, 20);
@@ -1903,7 +1901,6 @@ describe('kitten-mq', () => {
 
         // set consume handler before to connect
         _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
-          console.log('consume', err, packet);
           should(err).not.ok();
           should(packet).eql({
             test : 'hello world'
@@ -1940,7 +1937,6 @@ describe('kitten-mq', () => {
             }, () => {
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  console.log('message sent', err);
                   should(err).not.ok();
                 });
               }, 20);
