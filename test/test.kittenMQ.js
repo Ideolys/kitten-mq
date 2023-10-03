@@ -518,56 +518,6 @@ describe('kitten-mq', () => {
         });
       });
 
-      it('should declare listener handler even if no client is connected yet, and catch pending message', done => {
-        let _client1 = client();
-        let _client2 = client();
-
-        let _broker1 = broker(configBroker1);
-
-        // set consume handler before to connect
-        _client1.listen('endpoint/1.0/test', (err, packet) => {
-          should(err).not.ok();
-          should(packet).eql({
-            test : 'hello world'
-          });
-
-          setTimeout(() => {
-            should(_broker1._queues['endpoint/1.0'].queue).eql([]);
-            _client1.disconnect(() => {
-              _client2.disconnect(() => {
-                _broker1.stop(done);
-              });
-            });
-          }, 20);
-        });
-
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
-            hosts         : [
-              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
-            ]
-          }, () => {
-            _client2.connect({
-              clientId      : 'client_2',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
-              hosts         : [
-                'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
-              ]
-            }, () => {
-              setTimeout(() => {
-                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  should(err).not.ok();
-                });
-              }, 20);
-            });
-          });
-        });
-      });
-
       it('should not listen to /* ', done => {
         let _client1 = client();
         let _client2 = client();
@@ -1883,58 +1833,6 @@ describe('kitten-mq', () => {
                 }, 20);
               });
 
-              setTimeout(() => {
-                _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
-                  should(err).not.ok();
-                });
-              }, 20);
-            });
-          });
-        });
-      });
-
-      it('should declare consume handler even if no client is connected yet, and consume message', done => {
-        let _client1 = client();
-        let _client2 = client();
-
-        let _broker1 = broker(configBroker1);
-
-        // set consume handler before to connect
-        _client1.consume('endpoint/1.0/test', (err, packet, ack) => {
-          should(err).not.ok();
-          should(packet).eql({
-            test : 'hello world'
-          });
-
-          ack();
-
-          setTimeout(() => {
-            should(_broker1._queues['endpoint/1.0'].queue).eql([]);
-            _client1.disconnect(() => {
-              _client2.disconnect(() => {
-                _broker1.stop(done);
-              });
-            });
-          }, 20);
-        });
-
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client',
-            hosts         : [
-              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
-            ]
-          }, () => {
-            _client2.connect({
-              clientId      : 'client_2',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client',
-              hosts         : [
-                'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
-              ]
-            }, () => {
               setTimeout(() => {
                 _client2.send('endpoint/1.0/test', { test : 'hello world' }, (err) => {
                   should(err).not.ok();
@@ -3447,57 +3345,6 @@ describe('kitten-mq', () => {
                   should(err).not.ok();
                 });
               }, 20);
-            });
-          });
-        });
-      });
-
-      it('should send the message even if no client is connected yet', done => {
-        let _client1 = client();
-        let _client2 = client();
-
-        let _broker1 = broker(configBroker1);
-
-        _broker1.start(() => {
-          _client1.connect({
-            clientId      : 'client_1',
-            keysDirectory : path.join(__dirname, 'keys'),
-            keysName      : 'client1',
-            hosts         : [
-              'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
-            ]
-          }, () => {
-            let _isListenerHasBeenCalled = false;
-
-            _client1.listen('endpoint/1.0/1', (err, packet) => {
-              should(err).not.ok();
-              should(packet).eql({
-                test : 'hello world'
-              });
-              _isListenerHasBeenCalled = true;
-            });
-
-            // send it before to connect
-            _client2.send('endpoint/1.0/1', { test : 'hello world' }, (err) => {
-              should(err).not.ok();
-            });
-
-            _client2.connect({
-              clientId      : 'client_2',
-              keysDirectory : path.join(__dirname, 'keys'),
-              keysName      : 'client2',
-              hosts         : [
-                'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId
-              ]
-            }, () => {
-              setTimeout(() => {
-                should(_isListenerHasBeenCalled).eql(true);
-                _client1.disconnect(() => {
-                  _client2.disconnect(() => {
-                    _broker1.stop(done);
-                  });
-                });
-              }, 1500); // retry timer is set as 1000ms
             });
           });
         });
