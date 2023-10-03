@@ -3,6 +3,7 @@
 ### v0.12.2
 *2023-10-xx*
   - Remove retry implementation on client-side handlers when the connection to the broker has not yet been established
+  - Add missing `ExecReload` parameter to systemd service template
 
 ### v0.12.1
 *2023-09-29*
