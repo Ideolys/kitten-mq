@@ -343,6 +343,41 @@ describe('kitten-mq', () => {
         });
       });
 
+      it('should connect to hosts and emit a connect event', done => {
+        let _client = client();
+
+        let _broker1 = broker(configBroker1);
+        let _broker2 = broker(configBroker2);
+
+        console.log(_client);
+
+        _client.on('connect', () => {
+          should(_client.isConnected()).is.True();
+          _client.disconnect(() => {
+            should(_client.isConnected()).is.False();
+            _broker1.stop(() => {
+              _broker2.stop(done);
+            });
+          });
+        });
+
+        _broker1.start(() => {
+          _broker2.start(() => {
+            should(_client.isConnected()).is.False();
+
+            _client.connect({
+              keysDirectory : path.join(__dirname, 'keys'),
+              keysName      : 'client',
+              hosts         : [
+                'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId,
+                'localhost:' + _configBroker2.socketServer.port + '@' + _configBroker2.serviceId
+              ]
+            });
+          });
+        });
+      });
+
+
       it('should not call the connect callback after each reconnect', done => {
         let _client = client();
         let _broker1 = broker(configBroker1);
@@ -6114,6 +6149,36 @@ describe('kitten-mq', () => {
         }
 
         _broker1.start(_register);
+      });
+
+      it('should emit a disconnect event after disconnection', done => {
+        let _client = client();
+
+        let _configClient = {
+          clientId      : 'client_1',
+          keysDirectory : path.join(__dirname, 'keys'),
+          keysName      : 'client',
+          hosts         : [
+            'localhost:' + _configBroker1.socketServer.port + '@' + _configBroker1.serviceId + '@' + configBroker1.serviceId
+          ]
+        };
+
+        let _broker1 = broker(configBroker1);
+
+        _broker1.start(() => {
+          should(_client.isConnected()).is.False();
+
+          _client.on('connect', () => {
+            should(_client.isConnected()).is.True();
+            _client.disconnect();
+          });
+          _client.on('disconnect', () => {
+            should(_client.isConnected()).is.False();
+            _broker1.stop(done);
+          });
+
+          _client.connect(_configClient);
+        })
       });
 
       it('should add message in waiting queue if no client is listening', done => {

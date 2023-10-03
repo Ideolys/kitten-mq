@@ -94,6 +94,13 @@ and relaod configuration without restarting kitten-mq:
     console.log(err);
   });
 
+  // Instead of mq.connect() callback, we can subscribe to `connect` event
+  mq.on('connect', () => {
+    // This event is called only once
+    console.log('client connected');
+  });
+  mq.connect(config);
+
   // Now, you are ready to send message to a specific channel
   // If the broker is not available, it will re-try automatically until the sending queue is full, then the callback is called with errors
   mq.send('endpoint/v1/120', 'coucou', (err) => {
@@ -136,6 +143,17 @@ and relaod configuration without restarting kitten-mq:
   });
   listener.addId(10, (err) => {}); // you can add id to listen at runtime
   listener.removeId(222, (err) => {}); // or remove id to listen at runtime
+
+  // Disconnection
+  mq.disconnect(() => {
+    console.log('client disconnected');
+  });
+
+  // Instead of mq.disconnect() callback, we can subscribe to `disconnect` event
+  mq.on('disconnect', () => {
+    console.log('client disconnected');
+  });
+  mq.disconnect();
 
 ```
 
@@ -217,7 +235,7 @@ kitten_mq_queue_messages_count                  | Number of messages added to a 
 kitten_mq_queue_messages_dropped_count          | Number of messages dropped by a queue
 kitten_mq_queue_messages_timeout_count          | Number of messages in timeout in a queue
 
-## CLI usage 
+## CLI usage
 
 To display the CLI helper
 
@@ -238,7 +256,7 @@ Or directly a specific channel for this queue :
 
 `kitten-mq list -q easilys/v1 --channel movement`.
 
-To display the list of messages, use the option `-m` : 
+To display the list of messages, use the option `-m` :
 ![cli queue list message](./doc/cli_queue_list_message.png)
 
 To empty a queue, use the command line `kitten-mq delete`.
