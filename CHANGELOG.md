@@ -1,7 +1,7 @@
 # Kitten mq
 
 ### v0.12.2
-*2023-10-xx*
+*2023-10-04*
   - Add missing `ExecReload` parameter to systemd service template
   - Remove retry implementation on client-side handlers when the connection to the broker has not yet been established
   - Client extends now from EventEmitter with 2 available events :
