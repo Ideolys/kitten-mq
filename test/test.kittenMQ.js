@@ -349,8 +349,6 @@ describe('kitten-mq', () => {
         let _broker1 = broker(configBroker1);
         let _broker2 = broker(configBroker2);
 
-        console.log(_client);
-
         _client.on('connect', () => {
           should(_client.isConnected()).is.True();
           _client.disconnect(() => {
