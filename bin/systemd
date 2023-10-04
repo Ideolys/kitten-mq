@@ -6,6 +6,7 @@ After=network.target
 WorkingDirectory=/var/www/kitten-mq
 User=kitten-mq
 ExecStart=/var/www/kitten-mq/kitten-mq start -c kitten-mq.config.json
+ExecReload=/var/www/kitten-mq/kitten-mq reload -c kitten-mq.config.json
 Restart=always
 ProtectControlGroups=true
 ProtectHostname=true
