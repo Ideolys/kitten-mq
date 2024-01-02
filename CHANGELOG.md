@@ -1,5 +1,9 @@
 # Kitten mq
 
+### v0.12.3
+*2024-01-02*
+  - Fix last version, error message at package install (TAR_ENTRY_INVALID checksum failure).
+
 ### v0.12.2
 *2023-10-04*
   - Add missing `ExecReload` parameter to systemd service template
